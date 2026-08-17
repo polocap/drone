@@ -5,6 +5,7 @@ import http from 'http'
 const recordingProcesses = new Map()
 const RECONNECT_MAX_DELAY_MS = parseInt(process.env.RECONNECT_MAX_DELAY_MS) || 30000
 const RTMP_TIMEOUT_MS = parseInt(process.env.RTMP_TIMEOUT_MS) || 10000
+const FFMPEG_MAX_MEM_MB = parseInt(process.env.FFMPEG_MAX_MEM_MB) || 1024
 
 export function setupProxy(app) {
   app.all('/live/*', (req, res) => {
@@ -88,44 +89,71 @@ export function startRecording(streamKey, outputDir = '/var/lib/drone/videos') {
   
   const spawnFfmpeg = () => {
     const ffmpeg = spawn('ffmpeg', [
-      '-timeout', String(RTMP_TIMEOUT_MS * 1000),
+      '-timeout', String(RTMP_TIMEOUT_MS),
       '-reconnect', '1',
       '-reconnect_streamed', '1',
       '-reconnect_delay_max', '30',
       '-i', `rtmp://127.0.0.1:1935/live/${streamKey}`,
-      '-fflags', 'nobuffer+fastseek+flush_packets',
+      
+      '-fflags', 'nobuffer+fastseek+flush_packets+discardcorrupt',
       '-flags', 'low_delay',
       '-probesize', '32',
       '-analyzeduration', '0',
+      '-sync', 'ext',
+      
+      '-framedrop', '1',
+      
+      '-thread_queue_size', '16',
+      '-max_muxing_queue_size', '64',
+      
+      '-err_detect', 'ignore_err',
+      '-ec', 'favor_inter',
+      
       '-c', 'copy',
       '-f', 'flv',
       '-flvflags', 'no_duration_filesize',
-      '-max_muxing_queue_size', '512',
-      '-y',
-      outputFile
+      '-y', outputFile
     ], {
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        MALLOC_ARENA_MAX: '2'
+      }
     })
+    
+    let lastErrorTime = 0
+    const memMonitor = setInterval(() => {
+      try {
+        const usage = process.memoryUsage()
+        if (usage.rss > FFMPEG_MAX_MEM_MB * 1024 * 1024) {
+          console.warn(`Mémoire FFmpeg élevée: ${Math.round(usage.rss / 1024 / 1024)}MB pour ${streamKey}`)
+        }
+      } catch (e) {}
+    }, 10000)
     
     ffmpeg.stderr.on('data', (data) => {
       const msg = data.toString()
-      if (msg.includes('error') || msg.includes('Error')) {
-        console.error('FFmpeg error:', msg)
+      const now = Date.now()
+      if ((msg.includes('error') || msg.includes('Error')) && now - lastErrorTime > 5000) {
+        console.error('FFmpeg error:', msg.trim())
+        lastErrorTime = now
       }
     })
     
     ffmpeg.on('error', (e) => {
       console.error('FFmpeg process error:', e)
+      clearInterval(memMonitor)
       recordingProcesses.delete(streamKey)
     })
     
     ffmpeg.on('close', (code) => {
+      clearInterval(memMonitor)
       recordingProcesses.delete(streamKey)
       
       if (code !== 0 && retryCount < maxRetries) {
         retryCount++
         const delay = Math.min(1000 * Math.pow(2, retryCount), RECONNECT_MAX_DELAY_MS)
-        console.log(`Reconnexion FFmpeg dans ${delay}ms (tentative ${retryCount}/${maxRetries})`)
+        console.log(`Reconnexion FFmpeg dans ${delay}ms (tentative ${retryCount}/${maxRetries}) pour ${streamKey}`)
         setTimeout(spawnFfmpeg, delay)
       } else {
         console.log('Enregistrement terminé:', streamKey, 'code:', code)
@@ -149,30 +177,34 @@ export function startRecording(streamKey, outputDir = '/var/lib/drone/videos') {
 }
 
 export function stopRecording(streamKey) {
-  const process = recordingProcesses.get(streamKey)
-  if (process) {
-    if (process.stdin.writable) {
-      process.stdin.write('q')
-      
-      setTimeout(() => {
-        if (recordingProcesses.has(streamKey)) {
-          process.kill('SIGTERM')
-          setTimeout(() => {
-            if (recordingProcesses.has(streamKey)) {
-              process.kill('SIGKILL')
-              recordingProcesses.delete(streamKey)
-            }
-          }, 2000)
-        }
-      }, 3000)
-    } else {
-      process.kill('SIGTERM')
-    }
+  const proc = recordingProcesses.get(streamKey)
+  if (!proc) return false
+  
+  recordingProcesses.delete(streamKey)
+  
+  return new Promise((resolve) => {
+    const forceKillTimer = setTimeout(() => {
+      try {
+        proc.kill('SIGKILL')
+      } catch (e) {}
+      resolve(true)
+    }, 5000)
     
-    recordingProcesses.delete(streamKey)
-    return true
-  }
-  return false
+    proc.on('exit', () => {
+      clearTimeout(forceKillTimer)
+      resolve(true)
+    })
+    
+    if (proc.stdin?.writable) {
+      try {
+        proc.stdin.end('q')
+      } catch (e) {
+        proc.kill('SIGTERM')
+      }
+    } else {
+      proc.kill('SIGTERM')
+    }
+  })
 }
 
 export function isRecording(streamKey) {
@@ -183,10 +215,47 @@ export function getAllRecordings() {
   return Array.from(recordingProcesses.keys())
 }
 
-process.on('SIGTERM', () => {
-  console.log('Arrêt des enregistrements...')
+function gracefulShutdown() {
+  console.log('Arrêt gracieux des enregistrements...')
+  
+  const shutdownPromises = []
+  
   for (const [key, proc] of recordingProcesses.entries()) {
-    proc.kill('SIGTERM')
+    recordingProcesses.delete(key)
+    
+    const shutdownPromise = new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        try {
+          proc.kill('SIGKILL')
+        } catch (e) {}
+        resolve()
+      }, 5000)
+      
+      proc.on('exit', () => {
+        clearTimeout(timeout)
+        resolve()
+      })
+      
+      try {
+        proc.kill('SIGTERM')
+      } catch (e) {
+        clearTimeout(timeout)
+        resolve()
+      }
+    })
+    
+    shutdownPromises.push(shutdownPromise)
   }
-  recordingProcesses.clear()
+  
+  Promise.all(shutdownPromises).then(() => {
+    console.log('Tous les enregistrements arrêtés')
+    process.exit(0)
+  }).catch(() => process.exit(1))
+}
+
+process.on('SIGTERM', gracefulShutdown)
+process.on('SIGINT', gracefulShutdown)
+process.on('uncaughtException', (err) => {
+  console.error('Exception non gérée:', err)
+  gracefulShutdown()
 })

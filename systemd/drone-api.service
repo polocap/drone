@@ -21,6 +21,8 @@ Environment=CONFIG_PATH=/etc/drone
 Environment=UV_THREADPOOL_SIZE=16
 Environment=RTMP_TIMEOUT_MS=10000
 Environment=RECONNECT_MAX_DELAY_MS=30000
+Environment=FFMPEG_MAX_MEM_MB=1024
+Environment=NODE_OPTIONS=--max-old-space-size=2048
 
 StandardOutput=journal
 StandardError=journal

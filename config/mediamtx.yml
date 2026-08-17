@@ -27,8 +27,9 @@ rtmpAllowPublishing:
 rtmpAllowReading:
   - all
 
-rtmpReadTimeout: 10s
-rtmpWriteTimeout: 10s
+rtmpReadTimeout: 5s
+rtmpWriteTimeout: 5s
+rtmpBufferCount: 16
 
 ###############################################
 # RTSP Server (for compatibility)
@@ -40,8 +41,8 @@ protocols:
   - tcp
 
 rtspEncryption: "no"
-rtspReadTimeout: 10s
-rtspWriteTimeout: 10s
+rtspReadTimeout: 5s
+rtspWriteTimeout: 5s
 
 ###############################################
 # HLS Server (for web clients)
@@ -55,7 +56,7 @@ hlsSegmentCount: 7
 hlsSegmentDuration: 1s
 hlsPartDuration: 200ms
 hlsSegmentMaxSize: 50M
-hlsReadTimeout: 10s
+hlsReadTimeout: 5s
 
 ###############################################
 # WebRTC Server (for web clients)
@@ -65,7 +66,7 @@ webrtcAddress: :8889
 webrtcAllowOrigin: '*'
 webrtcICEUDPMuxAddress: :8189
 webrtcICETCPMuxAddress: :8189
-webrtcReadTimeout: 10s
+webrtcReadTimeout: 5s
 
 ###############################################
 # API Settings
@@ -82,7 +83,7 @@ paths:
   all_others:
     source: publisher
     sourceOnDemand: yes
-    sourceOnDemandStartTimeout: 10s
+    sourceOnDemandStartTimeout: 5s
     sourceOnDemandCloseAfter: 10s
     
     record: yes
@@ -92,18 +93,13 @@ paths:
     recordSegmentDuration: 1h
     recordCleanup: yes
     
-    readTimeout: 10s
-    writeTimeout: 10s
+    readTimeout: 5s
+    writeTimeout: 5s
+    readBufferCount: 512
 
 ###############################################
 # Limits & Performance
 ###############################################
 
-# Maximum concurrent connections
 maxConnections: 50
-
-# Maximum connection per IP
 maxConnectionsPerIP: 10
-
-# Buffer size for RTMP
-rtmpBufferCount: 32

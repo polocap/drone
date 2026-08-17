@@ -33,7 +33,8 @@ install_dependencies() {
         unclutter \
         upower \
         acpi \
-        network-manager
+        network-manager \
+        netcat-openbsd
     
     echo "✅ Dépendances système installées"
 }
@@ -96,6 +97,8 @@ setup_config() {
     
     cp /opt/drone/config/mediamtx.yml /etc/drone/mediamtx.yml
     echo "   - mediamtx.yml configuré"
+    
+    chmod +x /opt/drone/scripts/healthcheck-mediamtx.sh
     
     echo "✅ Configuration copiée"
 }

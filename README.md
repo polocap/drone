@@ -3,8 +3,8 @@
 > Système de retransmission vidéo pour opérations drone sur le terrain
 
 [![License](https://img.shields.io/badge/license-Internal-red.svg)](LICENSE)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04%20LTS-orange.svg)](https://ubuntu.com)
-[![Node.js](https://img.shields.io/badge/Node.js-20%20LTS-green.svg)](https://nodejs.org)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04%20LTS-orange.svg)](https://ubuntu.com)
+[![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-green.svg)](https://nodejs.org)
 
 ## Concept
 
@@ -59,7 +59,7 @@ Solution de retransmission vidéo pour opérations drone sur le terrain. Le syst
           ▼
     ┌─────────────────────────────────────┐
     │        Télécommande DJI Pilot 2      │
-    │  (Configuration RTMP: rtmp://IP/live)
+    │  (Configuration RTMP: rtmp://IP/live)│
     └─────────────────────────────────────┘
           │
           ▼
@@ -229,8 +229,8 @@ sudo systemctl restart drone-ui
 
 | Composant | Technologie |
 |-----------|-------------|
-| OS | Ubuntu Server 22.04 LTS |
-| Runtime | Node.js 20 LTS |
+| OS | Ubuntu Server 26.04 LTS |
+| Runtime | Node.js 22 LTS |
 | RTMP Server | MediaMTX |
 | Recording | FFmpeg |
 | Interface | React + Vite (kiosk Firefox) |
@@ -276,6 +276,7 @@ drone/
 └── scripts/
     ├── install.sh            # Script installation
     ├── cleanup-videos.sh    # Cron nettoyage
+    ├── healthcheck-mediamtx.sh # Healthcheck MediaMTX
     └── start-kiosk.sh        # Lancement Firefox kiosk
 ```
 

@@ -4,12 +4,14 @@ import { useEffect, useRef } from 'react'
 const BASE_RETRY_DELAY_MS = 1000
 const MAX_RETRY_DELAY_MS = 30000
 const MAX_RETRIES = 10
+const MAX_BUFFER_LAG_SECONDS = 2
 
 function StreamPlayer({ streamUrl, onStatusChange }) {
   const videoRef = useRef(null)
   const playerRef = useRef(null)
   const retryCountRef = useRef(0)
   const retryTimeoutRef = useRef(null)
+  const bufferCheckIntervalRef = useRef(null)
 
   useEffect(() => {
     if (!flvjs.isSupported()) {
@@ -43,7 +45,11 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
         stashInitialSize: 128,
         lazyLoad: false,
         lazyLoadMaxDuration: 0,
-        seekType: 'range'
+        seekType: 'range',
+        autoCleanupSourceBuffer: true,
+        autoCleanupMaxBackwardDuration: 3,
+        autoCleanupMinBackwardDuration: 1,
+        fixAudioTimestampGap: true
       }, {
         enableWorker: true,
         enableStashBuffer: false,
@@ -86,6 +92,19 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
         }
       })
 
+      flvPlayer.on(flvjs.Events.STATISTICS_INFO, (stats) => {
+        if (videoElement.buffered.length > 0) {
+          const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1)
+          const currentTime = videoElement.currentTime
+          const lag = bufferedEnd - currentTime
+          
+          if (lag > MAX_BUFFER_LAG_SECONDS) {
+            console.warn(`Buffer lag détecté: ${lag.toFixed(2)}s, saut au live`)
+            videoElement.currentTime = bufferedEnd - 0.5
+          }
+        }
+      })
+
       playerRef.current = flvPlayer
 
       videoElement.play().catch(e => {
@@ -94,10 +113,26 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
     }
 
     createPlayer()
+    
+    bufferCheckIntervalRef.current = setInterval(() => {
+      if (videoElement.buffered.length > 0 && !videoElement.paused) {
+        const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1)
+        const currentTime = videoElement.currentTime
+        const lag = bufferedEnd - currentTime
+        
+        if (lag > MAX_BUFFER_LAG_SECONDS) {
+          console.warn(`Buffer lag vérifié: ${lag.toFixed(2)}s, saut au live`)
+          videoElement.currentTime = bufferedEnd - 0.5
+        }
+      }
+    }, 2000)
 
     return () => {
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current)
+      }
+      if (bufferCheckIntervalRef.current) {
+        clearInterval(bufferCheckIntervalRef.current)
       }
       if (playerRef.current) {
         try {

@@ -29,7 +29,7 @@ Ce guide détaille l'installation complète de la suite DRONE OPS sur un Beelink
 
 ### Logiciel
 
-- USB bootable avec Ubuntu Server 22.04 LTS
+- USB bootable avec Ubuntu Server 26.04 LTS
 - Accès internet (pour télécharger les packages)
 - Accès SSH au Beelink (après installation)
 
@@ -47,7 +47,7 @@ cd drone-ops-suite
 
 ### 1. Créer la clé USB bootable
 
-**Télécharger Ubuntu Server 22.04 LTS:**
+**Télécharger Ubuntu Server 26.04 LTS:**
 - https://ubuntu.com/download/server
 
 **Créer la clé USB:**
@@ -56,10 +56,10 @@ cd drone-ops-suite
 # macOS
 diskutil list
 diskutil unmountDisk /dev/diskX
-sudo dd if=ubuntu-22.04.3-live-server-amd64.iso of=/dev/diskX bs=1m
+sudo dd if=ubuntu-26.04-live-server-amd64.iso of=/dev/diskX bs=1m
 
 # Linux
-sudo dd if=ubuntu-22.04.3-live-server-amd64.iso of=/dev/sdX bs=1M status=progress
+sudo dd if=ubuntu-26.04-live-server-amd64.iso of=/dev/sdX bs=1M status=progress
 ```
 
 ### 2. Installation sur le Beelink
@@ -200,7 +200,7 @@ sudo bash scripts/install.sh
 ```
 
 Le script va:
-- ✅ Installer Node.js 20
+- ✅ Installer Node.js 22
 - ✅ Installer FFmpeg
 - ✅ Installer Firefox
 - ✅ Installer MediaMTX (serveur RTMP)
@@ -243,13 +243,13 @@ Si vous avez des problèmes avec le script, voici la configuration manuelle.
 ### 1. Installation de Node.js
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
 Vérifier:
 ```bash
-node --version  # v20.x.x
+node --version  # v22.x.x
 npm --version   # 10.x.x
 ```
 
@@ -274,7 +274,7 @@ firefox --version
 ### 4. Installation de MediaMTX
 
 ```bash
-MEDIAMTX_VERSION="1.8.5"
+MEDIAMTX_VERSION="1.12.1"
 
 cd /tmp
 wget https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_linux_amd64.tar.gz
@@ -689,8 +689,8 @@ sudo systemctl restart mediamtx
 
 Avant d'être opérationnel, vérifiez:
 
-- [ ] Ubuntu Server installé et SSH fonctionnel
-- [ ] Node.js 20+ installé
+- [ ] Ubuntu Server 26.04 installé et SSH fonctionnel
+- [ ] Node.js 22+ installé
 - [ ] FFmpeg installé
 - [ ] Firefox installé
 - [ ] MediaMTX fonctionnel (port 1935)

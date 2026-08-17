@@ -9,6 +9,7 @@ Before=drone-api.service
 Type=simple
 User=root
 WorkingDirectory=/opt/mediamtx
+ExecStartPre=/bin/sleep 2
 ExecStart=/opt/mediamtx/mediamtx /etc/drone/mediamtx.yml
 Restart=always
 RestartSec=5s
