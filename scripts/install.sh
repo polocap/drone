@@ -7,8 +7,8 @@ echo "    DRONE OPS SUITE INSTALLER"
 echo "====================================="
 echo ""
 
-NODE_MAJOR=20
-DISTRO=$(lsb_release -s -c 2>/dev/null || cat /etc/os-release | grep -oP '(?<=VERSION_CODENAME=).*' || echo "jammy")
+NODE_MAJOR=22
+DISTRO=$(lsb_release -s -c 2>/dev/null || cat /etc/os-release | grep -oP '(?<=VERSION_CODENAME=).*' || echo "noble")
 
 check_root() {
     if [ "$EUID" -ne 0 ]; then
@@ -55,7 +55,7 @@ install_mediamtx() {
     echo ""
     echo "📦 Installation de MediaMTX..."
     
-    MEDIAMTX_VERSION="1.8.5"
+    MEDIAMTX_VERSION="1.12.1"
     MEDIAMTX_URL="https://github.com/bluenviron/mediamtx/releases/download/v${MEDIAMTX_VERSION}/mediamtx_v${MEDIAMTX_VERSION}_linux_amd64.tar.gz"
     
     mkdir -p /opt/mediamtx
@@ -110,8 +110,19 @@ setup_services() {
     
     systemctl enable mediamtx
     systemctl enable drone-api
+    systemctl enable drone-ui
     
     echo "✅ Services installés"
+}
+
+setup_sysctl() {
+    echo ""
+    echo "⚙️  Configuration réseau optimisée..."
+    
+    cp /opt/drone/config/sysctl.conf /etc/sysctl.d/99-drone-rtmp.conf
+    sysctl -p /etc/sysctl.d/99-drone-rtmp.conf
+    
+    echo "✅ Configuration réseau appliquée"
 }
 
 setup_wifi_ap() {
@@ -229,6 +240,7 @@ main() {
     setup_config
     setup_wifi_ap
     setup_services
+    setup_sysctl
     setup_autostart
     setup_cron
     install_app

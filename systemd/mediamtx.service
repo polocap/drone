@@ -1,7 +1,8 @@
 [Unit]
 Description=MediaMTX RTMP Server
 Documentation=https://github.com/bluenviron/mediamtx
-After=network.target
+After=network-online.target
+Wants=network-online.target
 Before=drone-api.service
 
 [Service]
@@ -10,11 +11,16 @@ User=root
 WorkingDirectory=/opt/mediamtx
 ExecStart=/opt/mediamtx/mediamtx /etc/drone/mediamtx.yml
 Restart=always
-RestartSec=5
+RestartSec=5s
+StartLimitBurst=5
+StartLimitIntervalSec=60
 
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=mediamtx
+
+WatchdogSec=30
+NotifyAccess=all
 
 [Install]
 WantedBy=multi-user.target
