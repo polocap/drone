@@ -1,0 +1,274 @@
+.live-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  position: relative;
+}
+
+.live-header {
+  height: 70px;
+  background: rgba(20, 20, 30, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.change-pilot-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #fff;
+  transition: all 0.2s;
+}
+
+.change-pilot-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.pilot-info-header {
+  display: flex;
+  flex-direction: column;
+}
+
+.pilot-name-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.pilot-unit-header {
+  font-size: 0.85rem;
+  color: #8892b0;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.connection-status.connected {
+  background: rgba(0, 255, 136, 0.15);
+  color: #00ff88;
+}
+
+.connection-status.disconnected {
+  background: rgba(255, 170, 0, 0.15);
+  color: #ffaa00;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.connected .status-dot {
+  background: #00ff88;
+}
+
+.disconnected .status-dot {
+  background: #ffaa00;
+}
+
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: rgba(255, 50, 50, 0.15);
+  color: #ff5050;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.rec-dot {
+  width: 8px;
+  height: 8px;
+  background: #ff5050;
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.time-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  color: #fff;
+}
+
+.time {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.date {
+  font-size: 0.8rem;
+  color: #8892b0;
+  text-transform: capitalize;
+}
+
+.stream-container {
+  flex: 1;
+  position: relative;
+  background: #0a0a0f;
+  overflow: hidden;
+}
+
+.waiting-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 15, 0.95);
+  z-index: 5;
+}
+
+.waiting-content {
+  text-align: center;
+  color: #fff;
+}
+
+.waiting-content h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #00d4ff;
+}
+
+.waiting-content p {
+  font-size: 1rem;
+  color: #8892b0;
+  margin-bottom: 1.5rem;
+}
+
+.wifi-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.wifi-ssid {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #00d4ff;
+}
+
+.wifi-pass {
+  font-size: 0.9rem;
+  color: #8892b0;
+}
+
+.rtmp-info {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #00ff88;
+  margin-bottom: 1rem;
+}
+
+.external-access-info {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.external-access-info h3 {
+  font-size: 1rem;
+  color: #00d4ff;
+  margin-bottom: 0.5rem;
+}
+
+.external-access-info p {
+  color: #8892b0;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.external-access-info code {
+  background: rgba(0, 212, 255, 0.1);
+  color: #00d4ff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.live-footer {
+  background: rgba(20, 20, 30, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem 1.5rem;
+  transition: all 0.3s;
+}
+
+.live-footer.hidden {
+  transform: translateY(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.menu-toggle {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  z-index: 20;
+  transition: all 0.2s;
+}
+
+.menu-toggle:hover {
+  background: rgba(0, 212, 255, 0.2);
+  border-color: #00d4ff;
+}

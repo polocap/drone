@@ -1,0 +1,100 @@
+#############################################
+# MediaMTX Configuration for DRONE OPS
+# https://github.com/bluenviron/mediamtx
+#############################################
+
+###############################################
+# General settings
+###############################################
+
+# Log level (debug, info, warn, error)
+logLevel: info
+logDestinations:
+  - stdout
+
+###############################################
+# RTMP Server
+###############################################
+
+rtmpAddress: :1935
+rtmpEncryption: "no"
+rtmpServerKey: ""
+rtmpServerCert: ""
+
+# Allow publishing from any IP (for Drone Controller)
+rtmpAllowPublishing:
+  - all
+
+# Allow reading from API server
+rtmpAllowReading:
+  - all
+
+###############################################
+# RTSP Server (for compatibility)
+###############################################
+
+rtspAddress: :8554
+protocols:
+  - udp
+  - tcp
+
+rtspEncryption: "no"
+
+###############################################
+# HLS Server (for web clients)
+###############################################
+
+hlsAddress: :8888
+hlsAllowOrigin: '*'
+hlsAlwaysRemux: yes
+hlsVariant: lowLatency
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+
+###############################################
+# WebRTC Server (for web clients)
+###############################################
+
+webrtcAddress: :8889
+webrtcAllowOrigin: '*'
+webrtcICEUDPMuxAddress: :8189
+webrtcICETCPMuxAddress: :8189
+
+###############################################
+# Recording settings
+###############################################
+
+# Paths format: %Y-%m-%d_%H-%M-%S
+# Example: 2024-01-15_14-30-00
+runOnConnect:
+  - "ffmpeg -i rtmp://localhost:1935/live/$RTMP_STREAM_PATH -c copy -f flv /var/lib/drone/videos/$(date +%Y-%m-%d)/$RTMP_STREAM_PATH_$(date +%Hh%M).flv"
+
+###############################################
+# API Settings
+###############################################
+
+apiAddress: :9997
+apiAllowOrigin: '*'
+
+###############################################
+# Path Settings
+###############################################
+
+paths:
+  all_others:
+    # Source is RTMP from drone controller
+    source: publisher
+    
+    # Record all streams
+    record: yes
+    
+    # Record format
+    recordFormat: flv
+    
+    # Store in daily folders
+    recordPath: /var/lib/drone/videos/%Y-%m-%d/%s.flv
+    
+    # Delete automatically after 7 days
+    publishIPFilter: allow

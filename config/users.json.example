@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Capitaine Martin",
+    "unit": "CIS Paris 15",
+    "rtmp_key": "pilot_martin"
+  },
+  {
+    "id": 2,
+    "name": "Lieutenant Dupont",
+    "unit": "GRIMP",
+    "rtmp_key": "pilot_dupont"
+  },
+  {
+    "id": 3,
+    "name": "Sergent-chef Bernard",
+    "unit": "CIS Lyon 6",
+    "rtmp_key": "pilot_bernard"
+  }
+]

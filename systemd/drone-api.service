@@ -1,0 +1,24 @@
+[Unit]
+Description=DRONE OPS API Server
+Documentation=https://github.com/your-org/drone-ops-suite
+After=network.target mediamtx.service
+Wants=mediamtx.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/drone
+ExecStart=/usr/bin/node /opt/drone/src/server/index.js
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=8080
+Environment=VIDEOS_DIR=/var/lib/drone/videos
+Environment=CONFIG_PATH=/etc/drone
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=drone-api
+
+[Install]
+WantedBy=multi-user.target

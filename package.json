@@ -1,0 +1,29 @@
+{
+  "name": "drone-ops-suite",
+  "version": "1.0.0",
+  "description": "Système de retransmission vidéo drone pour pompiers",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node src/server/index.js",
+    "dev:client": "vite src/client --host",
+    "build": "vite build src/client --outDir ../../dist",
+    "preview": "vite preview",
+    "start": "node src/server/index.js",
+    "install:media": "bash scripts/setup-mediamtx.sh"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "flv.js": "^1.6.2",
+    "node-fetch": "^3.3.2",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "vite": "^5.0.10"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

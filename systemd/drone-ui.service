@@ -1,0 +1,27 @@
+[Unit]
+Description=DRONE OPS Kiosk Interface (Firefox)
+Documentation=https://github.com/your-org/drone-ops-suite
+After=graphical.target drone-api.service
+Wants=drone-api.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/drone
+Environment=DISPLAY=:0
+Environment=HOME=/root
+Environment=XAUTHORITY=/root/.Xauthority
+
+ExecStartPre=/bin/sleep 10
+ExecStart=/opt/drone/scripts/start-kiosk.sh
+ExecStop=/usr/bin/pkill -f fullscreen
+
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=drone-ui
+
+[Install]
+WantedBy=graphical.target
