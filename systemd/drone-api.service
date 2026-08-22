@@ -1,8 +1,8 @@
 [Unit]
 Description=DRONE OPS API Server
 Documentation=https://github.com/your-org/drone-ops-suite
-After=network-online.target mediamtx.service
-Wants=mediamtx.service network-online.target
+After=network.target mediamtx.service
+Wants=mediamtx.service
 
 [Service]
 Type=simple
@@ -10,25 +10,15 @@ User=root
 WorkingDirectory=/opt/drone
 ExecStart=/usr/bin/node /opt/drone/src/server/index.js
 Restart=always
-RestartSec=10s
-StartLimitBurst=5
-StartLimitIntervalSec=60
-
+RestartSec=10
 Environment=NODE_ENV=production
 Environment=PORT=8080
 Environment=VIDEOS_DIR=/var/lib/drone/videos
 Environment=CONFIG_PATH=/etc/drone
-Environment=UV_THREADPOOL_SIZE=16
-Environment=RTMP_TIMEOUT_MS=10000
-Environment=RECONNECT_MAX_DELAY_MS=30000
-Environment=FFMPEG_MAX_MEM_MB=1024
-Environment=NODE_OPTIONS=--max-old-space-size=2048
 
-StandardOutput=journal
-StandardError=journal
+StandardOutput=syslog
+StandardError=syslog
 SyslogIdentifier=drone-api
-
-WatchdogSec=30
 
 [Install]
 WantedBy=multi-user.target

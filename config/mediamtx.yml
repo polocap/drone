@@ -1,105 +1,33 @@
-#############################################
-# MediaMTX Configuration for DRONE OPS
-# https://github.com/bluenviron/mediamtx
-# Optimized for Ubuntu 26 + DJI RTMP streams
-#############################################
-
 ###############################################
-# General settings
+# MediaMTX Configuration - DRONE OPS
+# Single stream key: "drone"
 ###############################################
 
 logLevel: info
 logDestinations:
   - stdout
 
-###############################################
-# RTMP Server
-###############################################
-
+# RTMP Server (port 1935)
+rtmp: yes
 rtmpAddress: :1935
-rtmpEncryption: "no"
-rtmpServerKey: ""
-rtmpServerCert: ""
 
-rtmpAllowPublishing:
-  - all
-
-rtmpAllowReading:
-  - all
-
-rtmpReadTimeout: 5s
-rtmpWriteTimeout: 5s
-rtmpBufferCount: 16
-
-###############################################
-# RTSP Server (for compatibility)
-###############################################
-
-rtspAddress: :8554
-protocols:
-  - udp
-  - tcp
-
-rtspEncryption: "no"
-rtspReadTimeout: 5s
-rtspWriteTimeout: 5s
-
-###############################################
-# HLS Server (for web clients)
-###############################################
-
+# HLS Server (port 8888)
+hls: yes
 hlsAddress: :8888
 hlsAllowOrigin: '*'
-hlsAlwaysRemux: yes
-hlsVariant: lowLatency
-hlsSegmentCount: 7
-hlsSegmentDuration: 1s
-hlsPartDuration: 200ms
-hlsSegmentMaxSize: 50M
-hlsReadTimeout: 5s
 
-###############################################
-# WebRTC Server (for web clients)
-###############################################
-
+# WebRTC (port 8889)
+webrtc: yes
 webrtcAddress: :8889
-webrtcAllowOrigin: '*'
-webrtcICEUDPMuxAddress: :8189
-webrtcICETCPMuxAddress: :8189
-webrtcReadTimeout: 5s
 
-###############################################
-# API Settings
-###############################################
-
+# API (port 9997)
+api: yes
 apiAddress: :9997
-apiAllowOrigin: '*'
 
-###############################################
-# Path Settings
-###############################################
-
+# Paths
 paths:
-  all_others:
+  drone:
     source: publisher
-    sourceOnDemand: yes
-    sourceOnDemandStartTimeout: 5s
-    sourceOnDemandCloseAfter: 10s
-    
     record: yes
+    recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S.flv
     recordFormat: flv
-    recordPath: /var/lib/drone/videos/%Y-%m-%d/%s.flv
-    recordMaxDuration: 24h
-    recordSegmentDuration: 1h
-    recordCleanup: yes
-    
-    readTimeout: 5s
-    writeTimeout: 5s
-    readBufferCount: 512
-
-###############################################
-# Limits & Performance
-###############################################
-
-maxConnections: 50
-maxConnectionsPerIP: 10

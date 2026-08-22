@@ -94,24 +94,30 @@ Solution de retransmission vidéo pour opérations drone sur le terrain. Le syst
 
 ### Utilisateurs
 
-Le système charge les utilisateurs depuis `/etc/drone/users.json`:
+**New Workflow**: Several pilots can use the same drone/remote.
+
+1. **Télécommande DJI**: Config with **single stream key** `drone` (fixed, stored in the remote)
+2. **Beelink startup**: User selects their identity on the screen (Capitaine Martin, Lt Dupont, etc.)
+3. **Videos**: Automatically recorded with pilot name + timestamp
+
+Configuration in `/etc/drone/users.json`:
 
 ```json
 [
   {
     "id": 1,
     "name": "Capitaine Martin",
-    "unit": "CIS Paris 15",
-    "rtmp_key": "pilot_martin"
+    "unit": "CIS Paris 15"
   },
   {
     "id": 2,
     "name": "Lieutenant Dupont",
-    "unit": "GRIMP",
-    "rtmp_key": "pilot_dupont"
+    "unit": "GRIMP"
   }
 ]
 ```
+
+**Stream Key**: `drone` (fixed for all operations)
 
 ### Stocks vidéo
 
@@ -119,15 +125,15 @@ Les vidéos sont stockées dans `/var/lib/drone/videos/` avec la structure:
 
 ```
 /var/lib/drone/videos/
-├── 2024-01-15/
-│   ├── martin_14h30.flv
-│   ├── dupont_16h45.flv
-│   └── martin_17h10.flv
-└── 2024-01-16/
-    └── martin_09h00.flv
+├── 2024-08-22/
+│   ├── 2024-08-22_14h30.flv
+│   ├── 2024-08-22_16h45.flv
+│   └── 2024-08-22_17h10.flv
+└── 2024-08-23/
+    └── 2024-08-23_09h00.flv
 ```
 
-**Rotation automatique**: Au démarrage, suppression des vidéos de plus de 7 jours.
+**Rotation automatique**: Suppression des vidéos de plus de 7 jours (cron quotidien).
 
 ### Accès Externe (Camions PC)
 
@@ -150,12 +156,21 @@ Si retransmission vers un serveur externe nécessaire, voir `config/servers.json
 ```
 1. Brancher batterie SmallRig VB99 (si pas déjà fait)
 2. Activer le Kill Switch (ON)             ← Allume Beelink + Écran par USB-C
-3. Attendre le boot automatique (~45s)
+3. Attendre le boot automatique (~30s)     ← Splash screen droneOps
 4. Sélectionner le pilote sur l'écran tactile
-5. Connecter la télécommande au WiFi "DRONE-OPS-XXX"
-6. Configurer DJI Pilot 2: rtmp://10.0.0.1:1935/live/{rtmp_key}
-7. Démarrer le vol                         ← Le flux s'affiche automatiquement
+5. La télécommande se connecte automatiquement au WiFi "DRONE-OPS-001"
+6. Le flux RTMP démarre automatiquement     ← Clé "drone" pré-configurée
+7. Démarrer le vol                          ← Le flux s'affiche automatiquement
 ```
+
+### Configuration Télécommande DJI Mavic 2 Enterprise
+
+**Paramètres RTMP:**
+- **Server IP**: `10.0.0.1`
+- **Port**: `1935`
+- **Stream Key**: `drone` (FIXE - ne pas modifier)
+
+**URL complète**: `rtmp://10.0.0.1:1935/live/drone`
 
 ### Arrêt
 
@@ -166,11 +181,11 @@ Si retransmission vers un serveur externe nécessaire, voir `config/servers.json
 
 ## Réseau WiFi
 
-Le Beelink crée un point d'accès:
+Le Beelink crée son propre point d'accès (pas besoin de réseau externe):
 
 | Paramètre | Valeur |
-|-----------|---------|
-| SSID | `DRONE-OPS-{SERIAL}` |
+|-----------|--------|
+| SSID | `DRONE-OPS-001` |
 | Mot de passe | `drone2024` |
 | IP Beelink | `10.0.0.1` |
 | IPs clients | `10.0.0.x` (DHCP) |

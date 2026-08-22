@@ -16,7 +16,8 @@ const DEFAULT_CONFIG = {
   wifi_password: 'drone2024',
   beelink_ip: '10.0.0.1',
   rtmp_port: 1935,
-  api_port: 8080
+  api_port: 8080,
+  rtmp_url: 'rtmp://10.0.0.1:1935/live/stream'
 }
 
 const DEFAULT_STATE = {
