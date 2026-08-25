@@ -1,0 +1,4 @@
+# eGalax 0eef:0001 on 1024x768 - calibrated 2026-08-25 from 33 taps, err 4px
+# exp = 1.6705*client -374.8, exp = 1.7434*client -290.8 (absolute) or relative 1.6856/-0.4367, 1.7401/+0.0285
+ATTRS{name}=="eGalax Inc. USB TouchController*", ENV{LIBINPUT_CALIBRATION_MATRIX}="1.6705 0 -0.3660 0 1.7434 -0.3787"
+ATTRS{name}=="eGalax Inc. USB TouchController Touchscreen", ENV{LIBINPUT_CALIBRATION_MATRIX}="1.6705 0 -0.3660 0 1.7434 -0.3787"

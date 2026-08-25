@@ -109,4 +109,20 @@ router.get('/pilots', async (req, res) => {
   }
 })
 
+// Debug endpoint for touch calibration - logs to server console/journal
+router.post('/debug-touch', async (req, res) => {
+  try {
+    const data = req.body
+    console.log('[TOUCH-DEBUG]', JSON.stringify(data))
+    // also append to /tmp/touch-debug.log for easy tail
+    try {
+      const fsSync = await import('fs')
+      fsSync.appendFileSync('/tmp/touch-debug.log', JSON.stringify({ ts: new Date().toISOString(), ...data }) + '\n')
+    } catch (e) {}
+    res.json({ ok: true })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 export default router

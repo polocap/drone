@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react'
 import PinScreen from './components/PinScreen'
 import PilotSelection from './components/PilotSelection'
 import LiveView from './components/LiveView'
+import Calibrate from './components/Calibrate'
 import { Ring } from './components/loading-ui/ring'
 import { getPilots, getConfig, setLastPilot } from './api'
 
 function App() {
+  // Calibrate route: http://10.0.0.1:8080/?calibrate=1 or /calibrate
+  if (typeof window !== 'undefined' && (window.location.pathname === '/calibrate' || window.location.search.includes('calibrate'))) {
+    return <Calibrate />
+  }
   const [view, setView] = useState('loading')
   const [pilots, setPilots] = useState([])
   const [config, setConfig] = useState(null)

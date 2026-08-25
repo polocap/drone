@@ -1,0 +1,4 @@
+[eGalax Calibrated]
+MatchName=eGalax Inc. USB TouchController*
+MatchVendor=0x0EEF
+CalibrationMatrix=1.6705 0 -0.3660 0 1.7434 -0.3787
