@@ -135,10 +135,13 @@ setup_plymouth_theme() {
     # Create theme directory
     mkdir -p "$THEME_DIR"
 
-    # Copy theme files from project
+    # Copy theme files from project (including logo/spinner PNGs)
     if [ -d "$INSTALL_DIR/plymouth/drone-ops" ]; then
         cp "$INSTALL_DIR/plymouth/drone-ops/drone-ops.plymouth" "$THEME_DIR/"
         cp "$INSTALL_DIR/plymouth/drone-ops/drone-ops.script" "$THEME_DIR/"
+        for asset in "$INSTALL_DIR/plymouth/drone-ops"/*.png "$INSTALL_DIR/plymouth/drone-ops"/*.svg; do
+            [ -f "$asset" ] && cp "$asset" "$THEME_DIR/" && echo "   → $(basename "$asset")"
+        done
         chmod 644 "$THEME_DIR"/*
 
         # Set as default theme

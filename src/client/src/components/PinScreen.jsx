@@ -68,6 +68,8 @@ function PinScreen({ onUnlock }) {
             type="button"
             className="pin-key"
             onClick={() => handleDigit(String(digit))}
+            onPointerDown={(e) => e.preventDefault()}
+            aria-label={`Touche ${digit}`}
           >
             {digit}
           </button>
@@ -77,6 +79,8 @@ function PinScreen({ onUnlock }) {
           type="button"
           className="pin-key"
           onClick={() => handleDigit('0')}
+          onPointerDown={(e) => e.preventDefault()}
+          aria-label="Touche 0"
         >
           0
         </button>

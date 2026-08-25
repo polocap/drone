@@ -17,6 +17,11 @@ export MOZ_ENABLE_WAYLAND=1
 export WLR_XCURSOR_SIZE=1
 export XCURSOR_SIZE=1
 export XCURSOR_THEME="OzoneWhite"
+# Force 1:1 pixel mapping - prevents touch vs CSS coordinate scaling mismatch
+# (HiDPI factor 1.25/1.5 would make 8→5, ×→9 offset by one row)
+export GDK_SCALE=1
+export GDK_DPI_SCALE=1
+export WLR_DRM_NO_ATOMIC=1
 
 # Wait for the drone API (max 120s)
 retries=0
@@ -44,5 +49,8 @@ exec cage -d -- \
     --disable-translate \
     --no-translate \
     --ozone-platform-hint=auto \
+    --force-device-scale-factor=1 \
+    --disable-pinch \
+    --disable-features=TouchpadOverscrollHistoryNavigation \
     --start-fullscreen \
     "$KIOSK_URL"

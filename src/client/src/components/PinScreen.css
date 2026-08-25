@@ -1,6 +1,9 @@
 .pin-screen {
   width: 100%;
   height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11,12 +14,6 @@
   -webkit-user-select: none;
   touch-action: manipulation;
   cursor: none;
-}
-
-/* Touch-only kiosk: hide cursor everywhere inside pin screen */
-.pin-screen *,
-.pin-screen .pin-key {
-  cursor: none !important;
 }
 
 .pin-header {
@@ -124,8 +121,6 @@
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
-  /* Prevent ghost click / double-tap zoom */
-  touch-action: manipulation;
 }
 
 .pin-key:active {

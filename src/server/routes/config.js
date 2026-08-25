@@ -31,7 +31,31 @@ async function ensureConfigDir() {
   } catch (e) {}
 }
 
+async function getPilotsData() {
+  await ensureConfigDir()
+  try {
+    const usersData = await fs.readFile(USERS_PATH, 'utf8')
+    return JSON.parse(usersData)
+  } catch (e) {
+    return [
+      { id: 1, name: 'Demonstration', unit: 'Mode Test', rtmp_key: 'demo' }
+    ]
+  }
+}
+
 router.get('/', async (req, res) => {
+  // When mounted at /api/pilots, '/' must return the pilots list,
+  // not the system config. This fixes the black-screen crash where
+  // App.jsx received an object instead of an array and pilots.map failed.
+  if (req.baseUrl && req.baseUrl.includes('/pilots')) {
+    try {
+      const users = await getPilotsData()
+      return res.json(users)
+    } catch (error) {
+      console.error('Erreur pilotes:', error)
+      return res.status(500).json({ error: 'Erreur lecture pilotes' })
+    }
+  }
   try {
     await ensureConfigDir()
     
@@ -77,18 +101,7 @@ router.post('/last-pilot', async (req, res) => {
 
 router.get('/pilots', async (req, res) => {
   try {
-    await ensureConfigDir()
-    
-    let users = []
-    try {
-      const usersData = await fs.readFile(USERS_PATH, 'utf8')
-      users = JSON.parse(usersData)
-    } catch (e) {
-      users = [
-        { id: 1, name: 'Demonstration', unit: 'Mode Test', rtmp_key: 'demo' }
-      ]
-    }
-    
+    const users = await getPilotsData()
     res.json(users)
   } catch (error) {
     console.error('Erreur pilotes:', error)

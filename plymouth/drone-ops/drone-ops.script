@@ -1,79 +1,107 @@
 /*
  * DRONE OPS Plymouth Boot Theme
- * Clean boot animation: droneOps logo + rotating dot spinner
+ * Logo: drone-ops-logo.png (fallback to text) + Ring spinner
  */
 
-// Brand colors
-accent = "0.0, 0.831, 1.0";  // Cyan #00d4ff
-text_color = "1.0, 1.0, 1.0"; // White
+Window.SetBackgroundTopColor(0.102, 0.102, 0.18);
+Window.SetBackgroundBottomColor(0.102, 0.102, 0.18);
 
-// Screen geometry
 screen_width = Window.GetWidth();
 screen_height = Window.GetHeight();
 center_x = screen_width / 2;
 center_y = screen_height / 2;
 
-// Background gradient (dark blue #1a1a2e)
-Window.SetBackgroundTopColor(0.102, 0.102, 0.18);
-Window.SetBackgroundBottomColor(0.102, 0.102, 0.18);
-
-// Logo text - "droneOps"
-logo_font_size = Math.Max(screen_height * 0.08, 48);
-logo_img = Image.Text("droneOps", 1.0, 1.0, 1.0, logo_font_size, "Bold");
-logo_sprite = Sprite.New();
-logo_sprite.SetImage(logo_img);
-logo_sprite.SetPosition(center_x - logo_img.GetWidth() / 2,
-                        center_y - logo_img.GetHeight() / 2 - 40, 1);
-logo_sprite.SetOpacity(1);
-
-// Loading spinner: 8 dots in a circle
-spinner_size = Math.Max(screen_height * 0.04, 24);
-num_dots = 8;
-dot_radius = spinner_size / 2;
-spinner_center_x = center_x;
-spinner_center_y = center_y + logo_img.GetHeight() / 2 + 40;
-
-spinner_dots = [];
-for (i = 0; i < num_dots; i++) {
-    angle = (i / num_dots) * 2 * Math.Pi;
-    dot_x = spinner_center_x + Math.Cos(angle) * spinner_size - dot_radius / 2;
-    dot_y = spinner_center_y + Math.Sin(angle) * spinner_size - dot_radius / 2;
-
-    dot = Image.Text("•", 0.0, 0.831, 1.0, dot_radius, "Bold");
-    dot_sprite = Sprite.New();
-    dot_sprite.SetImage(dot);
-    dot_sprite.SetPosition(dot_x, dot_y, 2);
-    dot_sprite.SetOpacity(0.2);
-    spinner_dots[i] = dot_sprite;
+// ── Logo ──────────────────────────────────────────────────────
+// Try PNG first (sharp, two-tone: drone white + Ops cyan)
+logo_image = Image("drone-ops-logo.png");
+if (!logo_image) {
+    // Fallback: plain text (white). Plymouth Image.Text signature:
+    // Image.Text(text, red, green, blue, alpha, font, align)
+    // Font must include size: "Sans Bold 48"
+    logo_font = "Sans Bold 48";
+    logo_image = Image.Text("droneOps", 1, 1, 1, 1, logo_font);
 }
 
-// Animation state
+logo_sprite = Sprite(logo_image);
+logo_sprite.SetPosition(center_x - logo_image.GetWidth() / 2,
+                        center_y - logo_image.GetHeight() / 2 - 40, 1);
+logo_sprite.SetOpacity(1);
+
+// ── Spinner ───────────────────────────────────────────────────
+// Prefer ring PNG (rotating arc, matches web Ring component).
+// Fallback to 8-dot pulsing circle if ring PNG not present.
+
+spinner_ring_image = Image("spinner-ring.png");
+spinner_size = 64;
+spinner_center_y = center_y + logo_image.GetHeight() / 2 + 60;
+
+use_ring = 0;
+if (spinner_ring_image) {
+    use_ring = 1;
+    // Scale ring to desired size (original 128x128)
+    if (spinner_ring_image.GetWidth() != spinner_size) {
+        spinner_ring_image = spinner_ring_image.Scale(spinner_size, spinner_size);
+    }
+    spinner_sprite = Sprite(spinner_ring_image);
+    spinner_sprite.SetPosition(center_x - spinner_size / 2,
+                               spinner_center_y - spinner_size / 2, 2);
+    spinner_angle = 0;
+}
+
+// Fallback dots (8 cyan dots, opacity pulse)
+num_dots = 8;
+spinner_dots = [];
+if (!use_ring) {
+    dot_spinner_size = Math.Max(screen_height * 0.04, 24);
+    dot_radius = dot_spinner_size / 2;
+    spinner_center_x = center_x;
+    // Use correct Image.Text signature: alpha=1, font includes size
+    dot_font = "Sans Bold 24";
+    for (i = 0; i < num_dots; i++) {
+        angle = (i / num_dots) * 2 * Math.Pi;
+        dot_x = spinner_center_x + Math.Cos(angle) * dot_spinner_size - dot_radius / 2;
+        dot_y = spinner_center_y + Math.Sin(angle) * dot_spinner_size - dot_radius / 2;
+        dot = Image.Text("•", 0, 0.831, 1, 1, dot_font);
+        dot_sprite = Sprite(dot);
+        dot_sprite.SetPosition(dot_x, dot_y, 2);
+        dot_sprite.SetOpacity(0.2);
+        spinner_dots[i] = dot_sprite;
+    }
+}
+
+// ── Animation ─────────────────────────────────────────────────
 frame = 0;
 animation_speed = 0.15;
 
 fun animate() {
-    active_index = Math.Floor(frame) % num_dots;
-
-    for (i = 0; i < num_dots; i++) {
-        // Distance from active dot (wrapping) drives the fade
-        distance = i - active_index;
-        if (distance < 0) distance += num_dots;
-
-        opacity = 1.0 - (distance / num_dots);
-        if (opacity < 0.2) opacity = 0.2;
-
-        spinner_dots[i].SetOpacity(opacity);
+    if (use_ring) {
+        spinner_angle += 0.12;
+        if (spinner_angle > 2 * Math.Pi) spinner_angle -= 2 * Math.Pi;
+        rotated = spinner_ring_image.Rotate(spinner_angle);
+        spinner_sprite.SetImage(rotated);
+    } else {
+        active_index = Math.Floor(frame) % num_dots;
+        for (i = 0; i < num_dots; i++) {
+            distance = i - active_index;
+            if (distance < 0) distance += num_dots;
+            opacity = 1.0 - (distance / num_dots);
+            if (opacity < 0.2) opacity = 0.2;
+            spinner_dots[i].SetOpacity(opacity);
+        }
+        frame += animation_speed;
     }
-
-    frame += animation_speed;
 }
 
 Plymouth.SetRefreshFunction(animate);
 
 fun quit_callback() {
     logo_sprite.SetOpacity(0);
-    for (i = 0; i < num_dots; i++) {
-        spinner_dots[i].SetOpacity(0);
+    if (use_ring) {
+        spinner_sprite.SetOpacity(0);
+    } else {
+        for (i = 0; i < num_dots; i++) {
+            spinner_dots[i].SetOpacity(0);
+        }
     }
 }
 

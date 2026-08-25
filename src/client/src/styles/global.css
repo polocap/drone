@@ -34,15 +34,15 @@ input, button {
   touch-action: manipulation;
 }
 
-/* Kiosk: touch-only, hide cursor to avoid coordinate mismatch (cursor vs touch) */
+/* Kiosk: touch-only, hide cursor.
+   Previous global * {cursor:none !important} caused Wayland/Chromium
+   hit-test offset (visual vs touch coordinates diverge).
+   Hide at compositor level (WLR_XCURSOR_SIZE) + only on root/pin-screen. */
 html, body, #root {
-  cursor: none !important;
-}
-* {
-  cursor: none !important;
+  cursor: none;
 }
 button, a {
-  cursor: none !important;
+  cursor: none;
 }
 
 /* Disable Google Translate injected UI */
@@ -67,7 +67,8 @@ body {
 /* Loading Screen - Matches Plymouth theme */
 .loading-screen {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -94,6 +95,12 @@ body {
   font-weight: 700;
   color: #00d4ff;
   letter-spacing: -0.02em;
+}
+
+.loading-ring {
+  width: 64px;
+  height: 64px;
+  color: #00d4ff;
 }
 
 .loading-spinner {

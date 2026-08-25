@@ -36,10 +36,14 @@ fi
 echo "📁 Creating theme directory..."
 mkdir -p "$THEME_DIR"
 
-# Copy theme files
+# Copy theme files (plymouth + script + images)
 echo "🎨 Installing theme files..."
 cp "${SCRIPT_DIR}/${THEME_NAME}/${THEME_NAME}.plymouth" "$THEME_DIR/"
 cp "${SCRIPT_DIR}/${THEME_NAME}/${THEME_NAME}.script" "$THEME_DIR/"
+# Copy logo and spinner assets if present (PNG/SVG)
+for asset in "${SCRIPT_DIR}/${THEME_NAME}"/*.png "${SCRIPT_DIR}/${THEME_NAME}"/*.svg; do
+    [ -f "$asset" ] && cp "$asset" "$THEME_DIR/" && echo "   → $(basename "$asset")"
+done
 
 # Set correct permissions
 chmod 644 "$THEME_DIR"/*

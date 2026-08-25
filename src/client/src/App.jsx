@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import PinScreen from './components/PinScreen'
 import PilotSelection from './components/PilotSelection'
 import LiveView from './components/LiveView'
+import { Ring } from './components/loading-ui/ring'
 import { getPilots, getConfig, setLastPilot } from './api'
 
 function App() {
@@ -46,16 +47,7 @@ function App() {
           <span className="loading-logo-drone">drone</span>
           <span className="loading-logo-ops">Ops</span>
         </div>
-        <div className="loading-spinner">
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-          <div className="loading-dot"></div>
-        </div>
+        <Ring className="loading-ring" />
       </div>
     )
   }
