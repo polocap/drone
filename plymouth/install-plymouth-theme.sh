@@ -8,6 +8,7 @@ set -e
 
 THEME_NAME="drone-ops"
 THEME_DIR="/usr/share/plymouth/themes/${THEME_NAME}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=============================================="
 echo "  Installing DRONE OPS Plymouth Theme"
@@ -37,8 +38,8 @@ mkdir -p "$THEME_DIR"
 
 # Copy theme files
 echo "🎨 Installing theme files..."
-cp "${THEME_NAME}/${THEME_NAME}.plymouth" "$THEME_DIR/"
-cp "${THEME_NAME}/${THEME_NAME}.script" "$THEME_DIR/"
+cp "${SCRIPT_DIR}/${THEME_NAME}/${THEME_NAME}.plymouth" "$THEME_DIR/"
+cp "${SCRIPT_DIR}/${THEME_NAME}/${THEME_NAME}.script" "$THEME_DIR/"
 
 # Set correct permissions
 chmod 644 "$THEME_DIR"/*
