@@ -214,6 +214,41 @@ sudo systemctl daemon-reload
 
 ---
 
+## Accès terminal (TTY) sans clavier USB
+
+Si le serveur affiche l'interface tactile et que vous avez besoin d'un terminal (ex: pour réparer le réseau), vous pouvez basculer vers un console texte :
+
+### Depuis le clavier USB
+Appuyez sur **Ctrl+Alt+F2** pour accéder à la console TTY2. Connectez-vous avec `drone` (pas de mot de passe).
+
+### Depuis SSH (si le réseau fonctionne)
+```bash
+ssh -i ~/.ssh/drone-beelink drone@192.168.100.1
+```
+
+### Commandes réseau utiles (si l'IP est perdue)
+```bash
+# Sur le serveur (via TTY ou SSH)
+sudo ip addr add 192.168.100.1/24 dev enp1s0
+sudo ip link set enp1s0 up
+```
+
+### Retour à l'interface graphique
+**Ctrl+Alt+F1** pour revenir à l'affichage graphique (GDM3).
+
+---
+
+## Séquence de démarrage complète
+
+1. **Plymouth** : Splash "droneOps" avec animation (pas de logo Ubuntu)
+2. **GRUB** : Menu caché (timeout=0), démarrage direct
+3. **GDM3** : Auto-login "drone" (pas de mot de passe)
+4. **Openbox** : Lance Firefox en mode kiosk
+5. **App** : Écran PIN (code: 123456) → Sélection pilote → Live view
+6. **WiFi** : AP "DRONE-OPS-001" disponible dès le boot
+
+---
+
 ## Support
 
 En cas de problème:

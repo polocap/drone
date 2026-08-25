@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PinScreen from './components/PinScreen'
 import PilotSelection from './components/PilotSelection'
 import LiveView from './components/LiveView'
 import { getPilots, getConfig, setLastPilot } from './api'
@@ -18,13 +19,10 @@ function App() {
         ])
         setPilots(pilotsData)
         setConfig(configData)
-
-        // Always show selection screen - no auto-redirect to last pilot
-        // This ensures the user must select themselves on the tactile screen
-        setView('selection')
+        setView('pin')
       } catch (error) {
         console.error('Erreur chargement initial:', error)
-        setView('selection')
+        setView('pin')
       }
     }
     loadInitialData()
@@ -59,6 +57,12 @@ function App() {
           <div className="loading-dot"></div>
         </div>
       </div>
+    )
+  }
+
+  if (view === 'pin') {
+    return (
+      <PinScreen onUnlock={() => setView('selection')} />
     )
   }
 
