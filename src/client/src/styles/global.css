@@ -34,6 +34,7 @@ input, button {
   touch-action: manipulation;
 }
 
+/* Loading Screen - Matches Plymouth theme */
 .loading-screen {
   width: 100%;
   height: 100vh;
@@ -45,12 +46,97 @@ input, button {
   color: #fff;
 }
 
-.loading-screen p {
-  margin-top: 1.5rem;
-  font-size: 1.1rem;
-  color: #8892b0;
+.loading-brand {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 3rem;
 }
 
+.loading-logo-drone {
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.loading-logo-ops {
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 700;
+  color: #00d4ff;
+  letter-spacing: -0.02em;
+}
+
+.loading-spinner {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.loading-dot {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #00d4ff;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  margin: -4px;
+  opacity: 0.2;
+  animation: loadingPulse 1.2s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(1) {
+  transform: rotate(0deg) translateX(25px);
+  animation-delay: 0s;
+}
+
+.loading-dot:nth-child(2) {
+  transform: rotate(45deg) translateX(25px);
+  animation-delay: 0.15s;
+}
+
+.loading-dot:nth-child(3) {
+  transform: rotate(90deg) translateX(25px);
+  animation-delay: 0.3s;
+}
+
+.loading-dot:nth-child(4) {
+  transform: rotate(135deg) translateX(25px);
+  animation-delay: 0.45s;
+}
+
+.loading-dot:nth-child(5) {
+  transform: rotate(180deg) translateX(25px);
+  animation-delay: 0.6s;
+}
+
+.loading-dot:nth-child(6) {
+  transform: rotate(225deg) translateX(25px);
+  animation-delay: 0.75s;
+}
+
+.loading-dot:nth-child(7) {
+  transform: rotate(270deg) translateX(25px);
+  animation-delay: 0.9s;
+}
+
+.loading-dot:nth-child(8) {
+  transform: rotate(315deg) translateX(25px);
+  animation-delay: 1.05s;
+}
+
+@keyframes loadingPulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+/* Legacy spinner - kept for compatibility */
 .spinner {
   width: 50px;
   height: 50px;
@@ -95,20 +181,20 @@ input, button {
     padding: 0 1rem;
     height: 60px;
   }
-  
+
   .pilot-info-header {
     display: none;
   }
-  
+
   .header-center {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .battery-container {
     padding: 0.4rem 0.75rem;
   }
-  
+
   .time-display {
     display: none;
   }

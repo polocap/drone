@@ -80,20 +80,21 @@ ping 10.0.0.1
 │ 1. ALLUMAGE                         │
 │    - Brancher batterie              │
 │    - Kill Switch ON                 │
-│    - Attendre ~30s (splash screen) │
+│    - Animation droneOps au boot     │
 └─────────────────────────────────────┘
               ↓
 ┌─────────────────────────────────────┐
 │ 2. SÉLECTION PILOTE                 │
-│    - Toucher l'écran                │
-│    - Choisir: Martin, Dupont, etc.  │
-│    - Confirmer                      │
+│    - Écran tactile actif            │
+│    - Touchez votre nom             │
+│    - Confirmez                     │
+│    (WiFi AP déjà disponible)        │
 └─────────────────────────────────────┘
               ↓
 ┌─────────────────────────────────────┐
 │ 3. TÉLÉCOMMANDE                     │
-│    - WiFi auto: DRONE-OPS-001       │
-│    - RTMP auto: clé "drone"         │
+│    - WiFi: DRONE-OPS-001            │
+│    - RTMP: clé "drone"             │
 └─────────────────────────────────────┘
               ↓
 ┌─────────────────────────────────────┐
@@ -106,7 +107,23 @@ ping 10.0.0.1
 
 ---
 
-## 4. Accès aux vidéos
+## 4. Écran de démarrage
+
+### Splash Screen Plymouth
+
+Au démarrage du système, vous verrez:
+- **droneOps** branding avec animation
+- Indicateur de chargement circulaire
+- Remplacement du logo Ubuntu standard
+
+Pour réinstaller le thème Plymouth:
+```bash
+sudo bash /opt/drone/plymouth/install-plymouth-theme.sh
+```
+
+---
+
+## 5. Accès aux vidéos
 
 ### Depuis un appareil connecté au WiFi
 
@@ -129,13 +146,13 @@ Les vidéos sont au format `.flv` et peuvent être:
 
 ---
 
-## 5. Vérification du système
+## 6. Vérification du système
 
 ### LEDs et status
 
 | Service | Port | Status |
 |---------|------|--------|
-| **WiFi AP** | - | LED WiFi allumée |
+| **WiFi AP** | - | Dès le boot |
 | **RTMP** | 1935 | Actif si télécommande connectée |
 | **Web UI** | 8080 | http://10.0.0.1:8080 |
 | **HLS** | 8888 | http://10.0.0.1:8888 |
@@ -153,9 +170,15 @@ ffprobe rtmp://10.0.0.1:1935/live/drone
 curl http://10.0.0.1:8080/health
 ```
 
+### Health Check complet
+
+```bash
+sudo /opt/drone/scripts/healthcheck.sh
+```
+
 ---
 
-## 6. Dépannage
+## 7. Dépannage
 
 ### Pas de flux vidéo
 
@@ -168,18 +191,85 @@ curl http://10.0.0.1:8080/health
 - Le Beelink est-il allumé? (LED power)
 - Redémarrer le Beelink
 - Vérifier: `ssh drone@10.0.0.1` → `sudo systemctl status drone-wifi-ap`
+- Forcer le redémarrage WiFi: `sudo systemctl restart drone-wifi-ap`
 
 ### Vidéos vides ou corrompues
 
 - Vérifier l'espace disque: `df -h /var/lib/drone/videos`
 - Vérifier les logs: `sudo journalctl -u drone-api -f`
 
+### Écran de sélection pilote
+
+- **Problème**: L'écran revient sur le pilote précédent
+- **Solution**: Le système demande toujours la sélection au démarrage
+- Si le problème persiste: `sudo systemctl restart drone-api drone-ui`
+
 ---
 
-## 7. Arrêt du système
+## 8. Arrêt du système
 
 1. Appuyer sur le **Kill Switch** (OFF)
 2. Le système s'éteint proprement
 3. Attendre 30s avant de débrancher
 
 **⚠️ IMPORTANT**: Ne pas débrancher brutalement - risque de corruption des vidéos.
+
+---
+
+## 9. Commandes utiles
+
+### Services systemd
+
+```bash
+# Status des services
+sudo systemctl status drone-wifi-ap
+sudo systemctl status drone-api
+sudo systemctl status drone-ui
+sudo systemctl status mediamtx
+
+# Redémarrer les services
+sudo systemctl restart drone-wifi-ap
+sudo systemctl restart drone-api
+sudo systemctl restart drone-ui
+sudo systemctl restart mediamtx
+
+# Logs en temps réel
+sudo journalctl -u drone-api -f
+sudo journalctl -u drone-wifi-ap -f
+```
+
+### Configuration
+
+```bash
+# Modifier les pilotes
+sudo nano /etc/drone/users.json
+
+# Recharger la config (redémarrer le service)
+sudo systemctl restart drone-api
+```
+
+---
+
+## 10. Architecture des services
+
+```
+┌─────────────────────────────────────────┐
+│            SERVICES SYSTEMD             │
+├─────────────────────────────────────────┤
+│  drone-wifi-ap  → Point d'accès WiFi   │
+│  mediamtx       → Serveur RTMP         │
+│  drone-api      → API Node.js          │
+│  drone-ui       → Kiosk Firefox        │
+└─────────────────────────────────────────┘
+              ↓
+┌─────────────────────────────────────────┐
+│            DÉMARRAGE                  │
+├─────────────────────────────────────────┤
+│  1. Plymouth (animation boot)         │
+│  2. drone-wifi-ap (WiFi disponible)   │
+│  3. mediamtx + drone-api (serveurs)   │
+│  4. drone-ui (écran tactile)            │
+└─────────────────────────────────────────┘
+```
+
+**Ordre de démarrage**: WiFi → MediaMTX → API → UI (tous en parallèle après dépendances)

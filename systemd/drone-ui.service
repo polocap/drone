@@ -1,8 +1,8 @@
 [Unit]
 Description=DRONE OPS Kiosk Interface (Firefox)
 Documentation=https://github.com/your-org/drone-ops-suite
-After=graphical.target drone-api.service
-Wants=drone-api.service
+After=graphical.target drone-api.service drone-wifi-ap.service
+Wants=drone-api.service drone-wifi-ap.service
 
 [Service]
 Type=simple
@@ -12,15 +12,19 @@ Environment=DISPLAY=:0
 Environment=HOME=/root
 Environment=XAUTHORITY=/root/.Xauthority
 
-ExecStartPre=/bin/sleep 10
+# Wait for X11 and services to be ready
+ExecStartPre=/bin/sleep 5
+ExecStartPre=/bin/sh -c 'until pgrep -x "Xorg" > /dev/null; do sleep 1; done'
+ExecStartPre=/bin/sh -c 'until curl -s http://localhost:8080/health > /dev/null 2>&1; do sleep 2; done'
 ExecStart=/opt/drone/scripts/start-kiosk.sh
-ExecStop=/usr/bin/pkill -f fullscreen
+ExecStop=/usr/bin/pkill -f firefox
 
 Restart=on-failure
 RestartSec=5
+RestartPreventExitStatus=1
 
-StandardOutput=syslog
-StandardError=syslog
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=drone-ui
 
 [Install]

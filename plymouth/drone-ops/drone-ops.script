@@ -1,0 +1,113 @@
+/*
+ * DRONE OPS Plymouth Boot Theme
+ * A clean, professional boot animation with droneOps branding
+ */
+
+// Theme configuration
+var logo_text = "droneOps";
+var accent_color = "0.0, 0.831, 1.0";      // Cyan #00d4ff
+var text_color = "1.0, 1.0, 1.0";          // White
+var bg_color = "0.102, 0.102, 0.18";       // Dark blue #1a1a2e
+
+// Screen dimensions
+var screen_width = Window.GetWidth();
+var screen_height = Window.GetHeight();
+var center_x = screen_width / 2;
+var center_y = screen_height / 2;
+
+// Background
+var bg = Image.Text("", 1, 1);
+var bg_sprite = Sprite.New();
+bg_sprite.SetImage(bg);
+bg_sprite.SetPosition(0, 0, -1);
+
+// Draw background
+fun refresh_callback() {
+    screen_width = Window.GetWidth();
+    screen_height = Window.GetHeight();
+    center_x = screen_width / 2;
+    center_y = screen_height / 2;
+
+    // Fill background with dark color
+    var bg = Image.Text("", screen_width, screen_height);
+    bg_sprite.SetImage(bg);
+}
+
+Window.SetBackgroundTopColor(0.102, 0.102, 0.18);
+Window.SetBackgroundBottomColor(0.102, 0.102, 0.18);
+
+// Logo text - "droneOps"
+var logo_font_size = Math.Max(screen_height * 0.08, 48);
+var logo_img = Image.Text(logo_text, 1, 1, 1, logo_font_size, "Bold");
+var logo_sprite = Sprite.New();
+logo_sprite.SetImage(logo_img);
+logo_sprite.SetPosition(center_x - logo_img.GetWidth() / 2, center_y - logo_img.GetHeight() / 2 - 40, 1);
+logo_sprite.SetOpacity(1);
+
+// Loading spinner animation
+var spinner_size = Math.Max(screen_height * 0.04, 24);
+var num_dots = 8;
+var dot_radius = spinner_size / 2;
+var spinner_center_x = center_x;
+var spinner_center_y = center_y + logo_img.GetHeight() / 2 + 40;
+
+var spinner_dots = [];
+for (var i = 0; i < num_dots; i++) {
+    var angle = (i / num_dots) * 2 * Math.PI;
+    var dot_x = spinner_center_x + Math.Cos(angle) * spinner_size - dot_radius / 2;
+    var dot_y = spinner_center_y + Math.Sin(angle) * spinner_size - dot_radius / 2;
+
+    var dot = Image.Text("•", 0.0, 0.831, 1.0, dot_radius, "Bold");
+    var dot_sprite = Sprite.New();
+    dot_sprite.SetImage(dot);
+    dot_sprite.SetPosition(dot_x, dot_y, 2);
+    dot_sprite.SetOpacity(0.2);
+    spinner_dots[i] = dot_sprite;
+}
+
+// Animation variables
+var frame = 0;
+var animation_speed = 0.15;
+
+// Animation function
+fun animate() {
+    var active_index = Math.Int(frame) % num_dots;
+
+    for (var i = 0; i < num_dots; i++) {
+        // Calculate distance from active dot for fade effect
+        var distance = i - active_index;
+        if (distance < 0) distance += num_dots;
+
+        // Dots further from active one fade out
+        var opacity = 1.0 - (distance / num_dots);
+        if (opacity < 0.2) opacity = 0.2;
+
+        spinner_dots[i].SetOpacity(opacity);
+    }
+
+    frame += animation_speed;
+}
+
+// Main refresh loop
+fun refresh() {
+    animate();
+}
+
+Plymouth.SetRefreshFunction(refresh);
+
+// Status functions
+fun update_status_callback(text) {
+    // Could display status text here if desired
+}
+
+Plymouth.SetUpdateStatusFunction(update_status_callback);
+
+// Quit animation
+fun quit_callback() {
+    logo_sprite.SetOpacity(0);
+    for (var i = 0; i < num_dots; i++) {
+        spinner_dots[i].SetOpacity(0);
+    }
+}
+
+Plymouth.SetQuitFunction(quit_callback);

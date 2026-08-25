@@ -1,11 +1,17 @@
 [Unit]
 Description=DRONE OPS WiFi Access Point
-After=network.target
+Documentation=https://github.com/your-org/drone-ops-suite
+After=network.target NetworkManager.service
+Wants=NetworkManager.service
+Before=drone-api.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/setup-wifi-ap.sh
+ExecStart=/opt/drone/scripts/setup-wifi-ap.sh
 RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=drone-wifi-ap
 
 [Install]
 WantedBy=multi-user.target

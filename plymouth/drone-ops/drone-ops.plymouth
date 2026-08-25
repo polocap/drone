@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=DRONE OPS
+Description=DRONE OPS Boot Theme
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/drone-ops
+ScriptFile=/usr/share/plymouth/themes/drone-ops/drone-ops.script

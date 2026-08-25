@@ -18,15 +18,9 @@ function App() {
         ])
         setPilots(pilotsData)
         setConfig(configData)
-        
-        if (configData.lastPilot) {
-          const lastPilot = pilotsData.find(p => p.id === configData.lastPilot)
-          if (lastPilot) {
-            setSelectedPilot(lastPilot)
-            setView('live')
-            return
-          }
-        }
+
+        // Always show selection screen - no auto-redirect to last pilot
+        // This ensures the user must select themselves on the tactile screen
         setView('selection')
       } catch (error) {
         console.error('Erreur chargement initial:', error)
@@ -48,10 +42,24 @@ function App() {
   }
 
   if (view === 'loading') {
-    return <div className="loading-screen">
-      <div className="spinner"></div>
-      <p>Initialisation...</p>
-    </div>
+    return (
+      <div className="loading-screen">
+        <div className="loading-brand">
+          <span className="loading-logo-drone">drone</span>
+          <span className="loading-logo-ops">Ops</span>
+        </div>
+        <div className="loading-spinner">
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+          <div className="loading-dot"></div>
+        </div>
+      </div>
+    )
   }
 
   return (

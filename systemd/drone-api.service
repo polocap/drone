@@ -8,16 +8,25 @@ Wants=mediamtx.service
 Type=simple
 User=root
 WorkingDirectory=/opt/drone
-ExecStart=/usr/bin/node /opt/drone/src/server/index.js
-Restart=always
-RestartSec=10
 Environment=NODE_ENV=production
 Environment=PORT=8080
 Environment=VIDEOS_DIR=/var/lib/drone/videos
 Environment=CONFIG_PATH=/etc/drone
 
-StandardOutput=syslog
-StandardError=syslog
+ExecStartPre=/bin/mkdir -p /var/lib/drone/videos
+ExecStartPre=/bin/mkdir -p /etc/drone
+ExecStart=/usr/bin/node /opt/drone/src/server/index.js
+
+Restart=always
+RestartSec=5
+RestartPreventExitStatus=1
+
+# Health check
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=drone-api
 
 [Install]
