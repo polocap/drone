@@ -262,6 +262,10 @@ use_networkmanager_hotspot() {
         return 1
     fi
 
+    # Re-enable WiFi if it was disabled
+    nmcli radio wifi on 2>/dev/null || true
+    sleep 1
+
     # Check if WiFi is available
     if ! nmcli dev show "$WIFI_IFACE" &>/dev/null; then
         log_error "Interface $WIFI_IFACE non gérée par NetworkManager"
