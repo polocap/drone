@@ -97,7 +97,52 @@ sudo systemctl enable drone-ui
 sudo reboot
 ```
 
-### Option 3: Mise à jour manuelle (si Git indisponible)
+### Option 3: Git Bundle + SCP (si le serveur n'a pas accès à Internet)
+
+Si le serveur ne peut pas accéder à GitHub (pas de DNS, pas de connexion), vous pouvez créer un bundle Git et le transférer via SCP :
+
+```bash
+# Depuis votre machine locale (là où se trouve le repo git)
+cd /path/to/drone
+
+# 1. Créer un bundle contenant toute la branche main
+git bundle create /tmp/drone-updates.bundle main
+
+# 2. Transférer le bundle vers le serveur
+scp -i ~/.ssh/drone-beelink /tmp/drone-updates.bundle drone@192.168.100.1:/tmp/
+
+# 3. Se connecter en SSH
+ssh -i ~/.ssh/drone-beelink drone@192.168.100.1
+
+# 4. Appliquer le bundle
+cd /opt/drone
+git fetch /tmp/drone-updates.bundle main:refs/heads/main-temp
+git merge main-temp
+git branch -d main-temp
+
+# 5. Recompiler le frontend
+sudo npm run build
+
+# 6. Installer le thème Plymouth (si modifié)
+sudo bash plymouth/install-plymouth-theme.sh
+
+# 7. Mettre à jour les services (si modifiés)
+sudo cp systemd/*.service /etc/systemd/system/
+sudo systemctl daemon-reload
+
+# 8. Nettoyer
+rm -f /tmp/drone-updates.bundle
+
+# 9. Redémarrer
+sudo reboot
+```
+
+**Notes :**
+- Le bundle est un fichier autonome qui ne nécessite pas de connexion réseau
+- Les modifications locales non commitées sur le serveur seront écrasées par le merge
+- Si le serveur a des changements locaux importants, faites un `git stash` avant le merge
+
+### Option 4: Mise à jour manuelle (si Git indisponible)
 
 Copiez manuellement les fichiers modifiés via SCP:
 

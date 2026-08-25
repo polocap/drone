@@ -16,6 +16,8 @@
     "express": "^4.21.0",
     "flv.js": "^1.6.2",
     "node-fetch": "^3.3.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "uuid": "^9.0.0"
   },
   "devDependencies": {

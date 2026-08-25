@@ -128,11 +128,9 @@ input, button {
 @keyframes loadingPulse {
   0%, 100% {
     opacity: 0.2;
-    transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.3);
   }
 }
 

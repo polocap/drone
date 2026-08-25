@@ -34,10 +34,10 @@ export async function getVideos() {
   return response.json()
 }
 
-export async function getStreamUrl(pilotKey) {
+export function getStreamUrl(pilotKey) {
   return `${API_BASE}/live/${pilotKey}.flv`
 }
 
-export async function getWebRTCLUrl(pilotKey) {
+export function getWebRTCLUrl(pilotKey) {
   return `${API_BASE}/stream/${pilotKey}`
 }
