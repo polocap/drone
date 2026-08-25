@@ -34,6 +34,36 @@ input, button {
   touch-action: manipulation;
 }
 
+/* Kiosk: touch-only, hide cursor to avoid coordinate mismatch (cursor vs touch) */
+html, body, #root {
+  cursor: none !important;
+}
+* {
+  cursor: none !important;
+}
+button, a {
+  cursor: none !important;
+}
+
+/* Disable Google Translate injected UI */
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-te-menu-value,
+#google_translate_element {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+body {
+  top: 0 !important;
+}
+.notranslate {
+  /* marker for Chromium translate suppression */
+}
+
 /* Loading Screen - Matches Plymouth theme */
 .loading-screen {
   width: 100%;

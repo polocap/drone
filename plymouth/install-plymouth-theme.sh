@@ -47,51 +47,129 @@ chmod 644 "$THEME_DIR"/*
 echo "⚙️  Configuring Plymouth..."
 
 # Set as default theme
-plymouth-set-default-theme -R "$THEME_NAME"
+if command -v plymouth-set-default-theme &> /dev/null; then
+    plymouth-set-default-theme "$THEME_NAME" 2>/dev/null || true
+else
+    # Ubuntu >= 26.04 (dracut): plymouth-set-default-theme may be absent.
+    # Use the alternatives system instead.
+    update-alternatives --install \
+        /usr/share/plymouth/themes/default.plymouth default.plymouth \
+        "$THEME_DIR/${THEME_NAME}.plymouth" 200
+    update-alternatives --set default.plymouth "$THEME_DIR/${THEME_NAME}.plymouth"
+fi
 
-# Update initramfs to include theme
-echo "🔄 Updating initramfs..."
-update-initramfs -u -k all
+# ── Boot splash: ensure plymouth binds i915, not simpledrm ─────────
+# Symptom: logs / black screen instead of droneOps animation.
+# Cause: simpledrm claims framebuffer before i915 loads (Intel iGPU).
+# Fix: load i915 early in initrd + blacklist simpledrm initcall, hide logs.
+echo "🔧 Configuring early KMS (i915) + hide boot logs..."
 
-# Update grub to show boot splash
+# initramfs-tools path (Ubuntu classic)
+if [ -d /etc/initramfs-tools ]; then
+    # Ensure i915 is loaded early in initramfs so plymouth binds i915
+    if ! grep -q "^i915" /etc/initramfs-tools/modules 2>/dev/null; then
+        echo "i915" >> /etc/initramfs-tools/modules
+        echo "   → added i915 to /etc/initramfs-tools/modules"
+    fi
+    # Ensure framebuffer and most modules are included
+    if [ -f /etc/initramfs-tools/initramfs.conf ]; then
+        if ! grep -q "^FRAMEBUFFER=y" /etc/initramfs-tools/initramfs.conf; then
+            # Ensure FRAMEBUFFER=y (remove any FRAMEBUFFER=n first)
+            sed -i 's/^FRAMEBUFFER=.*/FRAMEBUFFER=y/' /etc/initramfs-tools/initramfs.conf 2>/dev/null || true
+            if ! grep -q "FRAMEBUFFER=y" /etc/initramfs-tools/initramfs.conf; then
+                echo "FRAMEBUFFER=y" >> /etc/initramfs-tools/initramfs.conf
+            fi
+        fi
+        # Ensure MODULES=most so drm helpers are included
+        if grep -q "^MODULES=dep" /etc/initramfs-tools/initramfs.conf 2>/dev/null; then
+            sed -i 's/^MODULES=.*/MODULES=most/' /etc/initramfs-tools/initramfs.conf
+            echo "   → set MODULES=most in initramfs.conf"
+        fi
+    fi
+fi
+
+# dracut path (Ubuntu 26.04+)
+if [ -d /etc/dracut.conf.d ]; then
+    cat > /etc/dracut.conf.d/50-drone-ops.conf <<'DRACUTEOF'
+# DRONE OPS: ensure plymouth + i915 in initrd, avoid simpledrm flicker
+add_dracutmodules+=" plymouth drm "
+add_drivers+=" i915 "
+hostonly="no"
+DRACUTEOF
+    echo "   → wrote /etc/dracut.conf.d/50-drone-ops.conf"
+fi
+
+# Update GRUB to show only splash (no logs), and blacklist simpledrm
 echo "📝 Updating GRUB configuration..."
 if grep -q "GRUB_CMDLINE_LINUX_DEFAULT" /etc/default/grub; then
-    # Backup original
     cp /etc/default/grub /etc/default/grub.backup.$(date +%Y%m%d)
 
-    # Update grub config to show splash
-    sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub
+    # Desired cmdline: quiet splash + hide cursor + hide systemd logs + blacklist simpledrm
+    GRUB_SPLASH='quiet splash vt.global_cursor_default=0 loglevel=3 systemd.show_status=false udev.log_level=3 initcall_blacklist=simpledrm_platform_driver_init'
+
+    # Replace the line (preserve existing if already contains quiet splash, just ensure blacklist present)
+    sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\".*\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${GRUB_SPLASH}\"/" /etc/default/grub
+
     sed -i 's/#GRUB_GFXMODE/GRUB_GFXMODE/' /etc/default/grub
     sed -i 's/GRUB_GFXMODE=.*/GRUB_GFXMODE=auto/' /etc/default/grub
+    # Hide GRUB menu for kiosk (timeout 0)
+    if grep -q "^GRUB_TIMEOUT=" /etc/default/grub; then
+        sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub
+    fi
+    if grep -q "^GRUB_TIMEOUT_STYLE=" /etc/default/grub; then
+        sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=hidden/' /etc/default/grub
+    fi
 
     update-grub
-    echo "✅ GRUB updated"
+    echo "✅ GRUB updated → $GRUB_SPLASH"
 else
     echo "⚠️  Could not find GRUB_CMDLINE_LINUX_DEFAULT, manual configuration may be needed"
 fi
 
-# Enable Plymouth on boot
-echo "🔧 Enabling Plymouth on boot..."
-if [ -f /etc/initramfs-tools/initramfs.conf ]; then
-    if ! grep -q "FRAMEBUFFER=y" /etc/initramfs-tools/initramfs.conf; then
-        echo "FRAMEBUFFER=y" >> /etc/initramfs-tools/initramfs.conf
+# Update initramfs to include plymouth + theme + i915 (critical: without this,
+# plymouth only starts late from the real root and boot text shows)
+echo "🔄 Updating initramfs..."
+if command -v dracut &> /dev/null; then
+    # dracut (Ubuntu 26.04)
+    dracut -f 2>/dev/null || update-initramfs -u -k all 2>/dev/null || true
+else
+    update-initramfs -u -k all
+fi
+
+# Verify plymouth made it into the initramfs
+INITRD="/boot/initrd.img-$(uname -r)"
+if command -v lsinitrd &> /dev/null && [ -f "$INITRD" ]; then
+    COUNT=$(lsinitrd "$INITRD" | grep -ci plymouth || true)
+    if [ "$COUNT" -eq 0 ]; then
+        echo "❌ ERROR: plymouth is NOT in the initramfs - splash will not show at boot"
+        echo "   Check /etc/dracut.conf.d/ contains: add_dracutmodules+=\" plymouth drm \""
+        exit 1
+    else
+        echo "✅ plymouth found in initramfs ($COUNT files)"
+    fi
+    # Verify i915 also present
+    if lsinitrd "$INITRD" 2>/dev/null | grep -qi "i915"; then
+        echo "✅ i915 found in initramfs (early KMS enabled)"
+    else
+        echo "⚠️  i915 NOT in initramfs — plymouth may still bind simpledrm"
     fi
 fi
 
 # Test the theme
 echo ""
 echo "🎬 Testing theme (10 seconds)..."
-plymouthd --debug --debug-file=/tmp/plymouth-debug.log
-plymouth --show-splash &
-sleep 10
-plymouth --quit
+plymouthd --debug --debug-file=/tmp/plymouth-debug.log 2>/dev/null || true
+plymouth --show-splash 2>/dev/null &
+sleep 10 2>/dev/null || true
+plymouth --quit 2>/dev/null || true
 
 echo ""
 echo "=============================================="
 echo "  ✅ Plymouth Theme Installation Complete!"
 echo "=============================================="
 echo ""
-echo "The DRONE OPS theme will now display at boot."
+echo "The DRONE OPS theme will now display at boot (replaces logs/black screen)."
+echo "Boot splash uses i915 early KMS (simpledrm blacklisted)."
 echo ""
 echo "To test:"
 echo "  sudo plymouthd && sudo plymouth --show-splash"

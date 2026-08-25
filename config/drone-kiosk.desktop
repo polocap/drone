@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Drone Kiosk
+Comment=DRONE OPS fullscreen kiosk (cage + Chromium)
+Exec=/usr/local/bin/drone-kiosk-session
+Type=Application
+DesktopNames=drone-kiosk

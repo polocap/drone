@@ -9,33 +9,34 @@ function PinScreen({ onUnlock }) {
   const [error, setError] = useState(false)
 
   const handleDigit = useCallback((digit) => {
-    if (pin.length >= PIN_LENGTH) return
-    const newPin = pin + digit
-    setPin(newPin)
-    setError(false)
+    setPin(prev => {
+      if (prev.length >= PIN_LENGTH) return prev
+      const newPin = prev + digit
+      setError(false)
 
-    if (newPin.length === PIN_LENGTH) {
-      setTimeout(() => {
-        if (newPin === CORRECT_PIN) {
-          onUnlock()
-        } else {
-          setError(true)
-          setTimeout(() => {
-            setPin('')
-            setError(false)
-          }, 800)
-        }
-      }, 150)
+      if (newPin.length === PIN_LENGTH) {
+        setTimeout(() => {
+          if (newPin === CORRECT_PIN) {
+            onUnlock()
+          } else {
+            setError(true)
+            setTimeout(() => {
+              setPin('')
+              setError(false)
+            }, 800)
+          }
+        }, 150)
+      }
+      return newPin
+    })
+  }, [onUnlock])
+
+  const handleBackspace = useCallback((e) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
     }
-  }, [pin, onUnlock])
-
-  const handleBackspace = useCallback(() => {
     setPin(prev => prev.slice(0, -1))
-    setError(false)
-  }, [])
-
-  const handleClear = useCallback(() => {
-    setPin('')
     setError(false)
   }, [])
 
@@ -47,7 +48,7 @@ function PinScreen({ onUnlock }) {
   ))
 
   return (
-    <div className="pin-screen">
+    <div className="pin-screen notranslate" translate="no">
       <div className="pin-header">
         <div className="pin-brand">
           <span className="pin-brand-drone">drone</span>
@@ -64,23 +65,29 @@ function PinScreen({ onUnlock }) {
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(digit => (
           <button
             key={digit}
+            type="button"
             className="pin-key"
             onClick={() => handleDigit(String(digit))}
           >
             {digit}
           </button>
         ))}
-        <button className="pin-key pin-key-clear" onClick={handleClear}>
-          C
-        </button>
+        <div className="pin-key-spacer" aria-hidden="true" />
         <button
+          type="button"
           className="pin-key"
           onClick={() => handleDigit('0')}
         >
           0
         </button>
-        <button className="pin-key pin-key-back" onClick={handleBackspace}>
-          ⌫
+        <button
+          type="button"
+          className="pin-key pin-key-back"
+          onClick={handleBackspace}
+          onPointerDown={(e) => e.preventDefault()}
+          aria-label="Supprimer"
+        >
+          <span className="pin-key-back-glyph">×</span>
         </button>
       </div>
     </div>

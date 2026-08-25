@@ -10,6 +10,13 @@
   user-select: none;
   -webkit-user-select: none;
   touch-action: manipulation;
+  cursor: none;
+}
+
+/* Touch-only kiosk: hide cursor everywhere inside pin screen */
+.pin-screen *,
+.pin-screen .pin-key {
+  cursor: none !important;
 }
 
 .pin-header {
@@ -115,6 +122,10 @@
   margin: 0 auto;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Prevent ghost click / double-tap zoom */
+  touch-action: manipulation;
 }
 
 .pin-key:active {
@@ -123,15 +134,41 @@
   transform: scale(0.95);
 }
 
-.pin-key-clear {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #ffaa00;
-  border-color: rgba(255, 170, 0, 0.3);
+/* Empty placeholder keeps 0 centred and × on the right */
+.pin-key-spacer {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+  pointer-events: none;
 }
 
 .pin-key-back {
-  font-size: 1.5rem;
   color: #8892b0;
   border-color: rgba(136, 146, 176, 0.3);
+  /* Ensure glyph never touches the circular border */
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.pin-key-back-glyph {
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+/* Hide Google Translate injected UI if it slips through */
+.goog-te-banner-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
 }

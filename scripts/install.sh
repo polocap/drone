@@ -142,25 +142,61 @@ setup_plymouth_theme() {
         chmod 644 "$THEME_DIR"/*
 
         # Set as default theme
-        plymouth-set-default-theme -R drone-ops 2>/dev/null || true
+        plymouth-set-default-theme drone-ops 2>/dev/null || true
+        if command -v plymouth-set-default-theme &> /dev/null; then
+            plymouth-set-default-theme -R drone-ops 2>/dev/null || update-initramfs -u -k all 2>/dev/null || true
+        else
+            update-alternatives --install /usr/share/plymouth/themes/default.plymouth default.plymouth "$THEME_DIR/drone-ops.plymouth" 200 2>/dev/null || true
+            update-alternatives --set default.plymouth "$THEME_DIR/drone-ops.plymouth" 2>/dev/null || true
+        fi
 
-        # Update initramfs
-        update-initramfs -u -k all 2>/dev/null || true
+        # ── Ensure i915 early KMS, blacklist simpledrm, hide boot logs ──
+        if [ -d /etc/initramfs-tools ]; then
+            if ! grep -q "^i915" /etc/initramfs-tools/modules 2>/dev/null; then
+                echo "i915" >> /etc/initramfs-tools/modules 2>/dev/null || true
+            fi
+            if [ -f /etc/initramfs-tools/initramfs.conf ]; then
+                sed -i 's/^FRAMEBUFFER=.*/FRAMEBUFFER=y/' /etc/initramfs-tools/initramfs.conf 2>/dev/null || true
+                if ! grep -q "FRAMEBUFFER=y" /etc/initramfs-tools/initramfs.conf 2>/dev/null; then
+                    echo "FRAMEBUFFER=y" >> /etc/initramfs-tools/initramfs.conf 2>/dev/null || true
+                fi
+                if grep -q "^MODULES=dep" /etc/initramfs-tools/initramfs.conf 2>/dev/null; then
+                    sed -i 's/^MODULES=.*/MODULES=most/' /etc/initramfs-tools/initramfs.conf 2>/dev/null || true
+                fi
+            fi
+        fi
+        if [ -d /etc/dracut.conf.d ]; then
+            cat > /etc/dracut.conf.d/50-drone-ops.conf <<'DRACUTEOF'
+add_dracutmodules+=" plymouth drm "
+add_drivers+=" i915 "
+hostonly="no"
+DRACUTEOF
+        fi
 
-        # Update GRUB for splash screen
+        # Update GRUB: quiet splash + hide logs + blacklist simpledrm
         if [ -f /etc/default/grub ]; then
-            # Backup
             cp /etc/default/grub /etc/default/grub.backup.$(date +%Y%m%d) 2>/dev/null || true
-
-            # Update grub config
-            sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT=".*"/GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"/' /etc/default/grub 2>/dev/null || true
+            GRUB_SPLASH='quiet splash vt.global_cursor_default=0 loglevel=3 systemd.show_status=false udev.log_level=3 initcall_blacklist=simpledrm_platform_driver_init'
+            sed -i "s/GRUB_CMDLINE_LINUX_DEFAULT=\".*\"/GRUB_CMDLINE_LINUX_DEFAULT=\"${GRUB_SPLASH}\"/" /etc/default/grub 2>/dev/null || true
             sed -i 's/#GRUB_GFXMODE/GRUB_GFXMODE/' /etc/default/grub 2>/dev/null || true
             sed -i 's/GRUB_GFXMODE=.*/GRUB_GFXMODE=auto/' /etc/default/grub 2>/dev/null || true
-
+            if grep -q "^GRUB_TIMEOUT=" /etc/default/grub 2>/dev/null; then
+                sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub 2>/dev/null || true
+            fi
+            if grep -q "^GRUB_TIMEOUT_STYLE=" /etc/default/grub 2>/dev/null; then
+                sed -i 's/^GRUB_TIMEOUT_STYLE=.*/GRUB_TIMEOUT_STYLE=hidden/' /etc/default/grub 2>/dev/null || true
+            fi
             update-grub 2>/dev/null || true
         fi
 
-        echo "✅ Thème Plymouth installé"
+        # Rebuild initramfs after GRUB + modules changes
+        if command -v dracut &> /dev/null; then
+            dracut -f 2>/dev/null || update-initramfs -u -k all 2>/dev/null || true
+        else
+            update-initramfs -u -k all 2>/dev/null || true
+        fi
+
+        echo "✅ Thème Plymouth installé (i915 early KMS, simpledrm blacklisted, splash only)"
     else
         echo "⚠️  Fichiers thème Plymouth non trouvés, saut..."
     fi
