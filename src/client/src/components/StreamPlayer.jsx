@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 const BASE_RETRY_DELAY_MS = 1000
 const MAX_RETRY_DELAY_MS = 30000
 const MAX_RETRIES = 10
-const MAX_BUFFER_LAG_SECONDS = 2
+const MAX_BUFFER_LAG_SECONDS = 1.5
 
 function StreamPlayer({ streamUrl, onStatusChange }) {
   const videoRef = useRef(null)
@@ -67,10 +67,22 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 30,
-        maxBufferLength: 10,
-        liveSyncDurationCount: 3,
-        liveMaxLatencyDurationCount: 5,
+        backBufferLength: 0,
+        maxBufferLength: 2,
+        maxMaxBufferLength: 4,
+        maxBufferSize: 10 * 1000 * 1000,
+        liveSyncDurationCount: 2,
+        liveMaxLatencyDurationCount: 4,
+        liveDurationInfinity: true,
+        highBufferWatchdogPeriod: 1,
+        nudgeOffset: 0.1,
+        nudgeMaxRetry: 3,
+        maxFragLookUpTolerance: 0.2,
+        // Reduce stalls / latency for live streams
+        manifestLoadingTimeOut: 10000,
+        manifestLoadingMaxRetry: 6,
+        levelLoadingTimeOut: 10000,
+        fragLoadingTimeOut: 20000,
       })
 
       hls.loadSource(streamUrl)
@@ -82,6 +94,11 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
         videoElement.play().catch(() => {
           console.log('Autoplay bloqué, interaction utilisateur requise')
         })
+      })
+
+      // Listen for buffer events that cause stalls
+      hls.on(Hls.Events.BUFFER_EOS, () => {
+        console.warn('HLS: end of buffer, attempting recovery')
       })
 
       hls.on(Hls.Events.ERROR, (event, data) => {
@@ -137,10 +154,10 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
         const lag = bufferedEnd - currentTime
         if (lag > MAX_BUFFER_LAG_SECONDS) {
           console.warn(`Buffer lag vérifié: ${lag.toFixed(2)}s, saut au live`)
-          videoElement.currentTime = bufferedEnd - 0.5
+          videoElement.currentTime = bufferedEnd - 0.2
         }
       }
-    }, 2000)
+    }, 1000)
 
     return () => {
       destroyed = true
