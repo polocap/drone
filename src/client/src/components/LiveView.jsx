@@ -149,9 +149,9 @@ function InfoModal({ open, onClose, config, isConnected }) {
             </div>
             <div className="status-row">
               <span className="status-row-label">Lien RTMP distant</span>
-              <span className="status-row-value">
+              <span className="status-row-value" title={status.rtmp === 'yellow' ? 'Serveur joignable mais aucun flux drone reçu (en attente)' : undefined}>
                 <StatusDot state={status.rtmp} />
-                {status.rtmp === 'green' ? 'Opérationnel' : status.rtmp === 'yellow' ? 'Dégradé' : status.rtmp === 'red' ? 'Hors ligne' : '…'}
+                {status.rtmp === 'green' ? 'Opérationnel' : status.rtmp === 'yellow' ? 'En attente — aucun flux' : status.rtmp === 'red' ? 'Hors ligne' : '…'}
               </span>
             </div>
             <div className="status-row">
@@ -234,7 +234,9 @@ function LiveView({ config }) {
         <StreamPlayer streamUrl={getStreamUrl()} onStatusChange={handleStreamStatus} />
         {!isConnected && (
           <div className="waiting-overlay">
-            <Ring className="waiting-ring" />
+            <div className="waiting-ring-wrap" aria-hidden="true">
+              <Ring className="waiting-ring" />
+            </div>
             <div className="waiting-content">
               <h2>En attente du flux</h2>
               <p>Connectez la télécommande au WiFi</p>

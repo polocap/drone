@@ -53,15 +53,22 @@
   z-index: 5;
   overflow: hidden;
 }
-.waiting-ring {
+.waiting-ring-wrap {
   position: absolute;
   width: min(62vw, 340px);
   height: min(62vw, 340px);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  color: rgba(255,255,255,0.08);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.waiting-ring {
+  width: 100%;
+  height: 100%;
+  color: rgba(255,255,255,0.08);
   --duration: 1.4s;
 }
 .waiting-content { position: relative; z-index: 1; text-align: center; color: #fff; padding: 24px; }
@@ -110,9 +117,9 @@
   padding: 4px 14px;
 }
 .dock-item--icon svg {
-  width: 26px;
-  height: 26px;
-  color: rgba(255,255,255,0.88);
+  width: 32px;
+  height: 32px;
+  color: rgba(255,255,255,0.92);
 }
 .dock-label-sm {
   font-size: 0.50rem;
