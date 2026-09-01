@@ -148,17 +148,17 @@ function InfoModal({ open, onClose, config, isConnected }) {
               </span>
             </div>
             <div className="status-row">
-              <span className="status-row-label">Lien RTMP distant</span>
-              <span className="status-row-value" title={status.rtmp === 'yellow' ? 'Serveur joignable mais aucun flux drone reçu (en attente)' : undefined}>
-                <StatusDot state={status.rtmp} />
-                {status.rtmp === 'green' ? 'Opérationnel' : status.rtmp === 'yellow' ? 'En attente — aucun flux' : status.rtmp === 'red' ? 'Hors ligne' : '…'}
+              <span className="status-row-label">Flux drone</span>
+              <span className="status-row-value">
+                <StatusDot state={isConnected ? 'green' : 'yellow'} />
+                {isConnected ? 'Connecté' : 'En attente'}
               </span>
             </div>
             <div className="status-row">
-              <span className="status-row-label">Flux drone</span>
+              <span className="status-row-label">4G</span>
               <span className="status-row-value">
-                <StatusDot state={isConnected ? 'green' : 'red'} />
-                {isConnected ? 'Connecté' : 'En attente'}
+                <StatusDot state="red" />
+                Non disponible
               </span>
             </div>
           </div>
@@ -234,12 +234,12 @@ function LiveView({ config }) {
         <StreamPlayer streamUrl={getStreamUrl()} onStatusChange={handleStreamStatus} />
         {!isConnected && (
           <div className="waiting-overlay">
-            <div className="waiting-ring-wrap" aria-hidden="true">
-              <Ring className="waiting-ring" />
-            </div>
             <div className="waiting-content">
               <h2>En attente du flux</h2>
               <p>Connectez la télécommande au WiFi</p>
+            </div>
+            <div className="waiting-ring-wrap" aria-hidden="true">
+              <Ring className="waiting-ring" />
             </div>
           </div>
         )}

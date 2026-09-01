@@ -45,33 +45,33 @@
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 22px;
   background: rgba(0,0,0,0.72);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: 5;
   overflow: hidden;
+  padding: 24px;
 }
 .waiting-ring-wrap {
-  position: absolute;
-  width: min(62vw, 340px);
-  height: min(62vw, 340px);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
   pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .waiting-ring {
   width: 100%;
   height: 100%;
-  color: rgba(255,255,255,0.08);
-  --duration: 1.4s;
+  color: #fff;
+  --duration: 1s;
 }
-.waiting-content { position: relative; z-index: 1; text-align: center; color: #fff; padding: 24px; }
+.waiting-content { position: relative; z-index: 1; text-align: center; color: #fff; }
 .waiting-content h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; text-shadow: 0 1px 12px rgba(0,0,0,0.5); }
 .waiting-content p { font-size: 0.9rem; color: var(--text-secondary); }
 
@@ -117,9 +117,9 @@
   padding: 4px 14px;
 }
 .dock-item--icon svg {
-  width: 32px;
-  height: 32px;
-  color: rgba(255,255,255,0.92);
+  width: 26px;
+  height: 26px;
+  color: rgba(255,255,255,0.88);
 }
 .dock-label-sm {
   font-size: 0.50rem;
