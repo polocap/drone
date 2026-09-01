@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import StreamPlayer from './StreamPlayer'
 import ConfirmModal from './ConfirmModal'
+import { Ring } from './loading-ui/ring'
 import { getStreamUrl } from '../api'
 import './LiveView.css'
 
@@ -233,14 +234,10 @@ function LiveView({ config }) {
         <StreamPlayer streamUrl={getStreamUrl()} onStatusChange={handleStreamStatus} />
         {!isConnected && (
           <div className="waiting-overlay">
+            <Ring className="waiting-ring" />
             <div className="waiting-content">
-              <div className="waiting-pulse" />
               <h2>En attente du flux</h2>
               <p>Connectez la télécommande au WiFi</p>
-              <div className="wifi-info">
-                <span className="wifi-ssid">{config?.wifi_ssid || 'DRONE-OPS-001'}</span>
-                <span className="wifi-pass">Mot de passe : {config?.wifi_password || 'drone2024'}</span>
-              </div>
             </div>
           </div>
         )}
@@ -252,8 +249,6 @@ function LiveView({ config }) {
           <StatusDot state={isConnected ? 'green' : 'red'} />
           <span className="dock-label">{isConnected ? 'Connecté' : 'Non connecté'}</span>
         </button>
-
-        <div className="dock-divider" />
 
         <button className="dock-item dock-item--icon" onClick={()=>setShowSettings(true)} aria-label="Réglages">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -271,8 +266,6 @@ function LiveView({ config }) {
           </svg>
           <span className="dock-label-sm">Infos</span>
         </button>
-
-        <div className="dock-divider" />
 
         <button className="dock-close" onClick={()=>setShowShutdown(true)} aria-label="Éteindre">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">

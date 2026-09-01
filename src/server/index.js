@@ -15,7 +15,18 @@ const PORT = process.env.PORT || 8080
 const MAX_PORT_RETRIES = 5
 
 app.use(express.json())
-app.use(express.static(path.join(__dirname, '../../dist')))
+app.use(express.static(path.join(__dirname, '../../dist'), {
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+    } else if (filePath.match(/\.(js|css)$/)) {
+      // hashed assets can be cached, but force revalidate to handle hash collisions
+      res.setHeader('Cache-Control', 'no-cache')
+    }
+  }
+}))
 
 app.use('/api/videos', videosRouter)
 app.use('/api/config', configRouter)

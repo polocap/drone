@@ -51,30 +51,22 @@
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: 5;
+  overflow: hidden;
 }
-.waiting-content { text-align: center; color: #fff; padding: 24px; }
-.waiting-pulse {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  margin: 0 auto 18px;
-  border: 2px solid rgba(255,255,255,0.18);
-  position: relative;
-}
-.waiting-pulse::after {
-  content: '';
+.waiting-ring {
   position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.9);
-  animation: pulseDot 1.6s ease-in-out infinite;
+  width: min(62vw, 340px);
+  height: min(62vw, 340px);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,255,255,0.08);
+  pointer-events: none;
+  --duration: 1.4s;
 }
-@keyframes pulseDot { 0%,100%{ opacity: 1; transform: scale(1); } 50%{ opacity: 0.45; transform: scale(0.85); } }
-.waiting-content h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; }
-.waiting-content p { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.25rem; }
-.wifi-info { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
-.wifi-ssid { font-size: 0.95rem; font-weight: 600; color: #fff; letter-spacing: 0.02em; }
-.wifi-pass { font-size: 0.85rem; color: var(--text-secondary); }
+.waiting-content { position: relative; z-index: 1; text-align: center; color: #fff; padding: 24px; }
+.waiting-content h2 { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; text-shadow: 0 1px 12px rgba(0,0,0,0.5); }
+.waiting-content p { font-size: 0.9rem; color: var(--text-secondary); }
 
 /* ── Dock — liquid glass, bottom center ── */
 .dock {
@@ -85,8 +77,8 @@
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 8px 10px;
+  gap: 2px;
+  padding: 6px 6px 6px 12px;
   border-radius: 999px;
   background: rgba(40,40,44,0.72);
   backdrop-filter: blur(28px) saturate(180%);
@@ -114,33 +106,25 @@
 .dock-item:active { transform: scale(0.96); background: rgba(255,255,255,0.10); }
 .dock-item--icon {
   flex-direction: column;
-  gap: 3px;
-  padding: 6px 14px;
+  gap: 2px;
+  padding: 4px 14px;
 }
 .dock-item--icon svg {
-  width: 20px;
-  height: 20px;
-  color: rgba(255,255,255,0.82);
+  width: 26px;
+  height: 26px;
+  color: rgba(255,255,255,0.88);
 }
 .dock-label-sm {
-  font-size: 0.62rem;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: 0.50rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.62);
-}
-
-.dock-divider {
-  width: 1px;
-  height: 28px;
-  background: rgba(255,255,255,0.10);
-  margin: 0 4px;
-  flex-shrink: 0;
+  color: rgba(255,255,255,0.56);
 }
 
 .dock-close {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -150,11 +134,12 @@
   box-shadow: 0 2px 12px rgba(255,59,48,0.38);
   transition: transform 0.12s ease, background 0.15s ease;
   flex-shrink: 0;
+  margin-left: 2px;
 }
 .dock-close:active { transform: scale(0.92); background: #e0342b; }
-.dock-close svg { width: 16px; height: 16px; }
+.dock-close svg { width: 18px; height: 18px; }
 
-/* ── Dots ── */
+/* ── Dots (static — no flashing) ── */
 .s-dot {
   width: 8px;
   height: 8px;
@@ -166,8 +151,6 @@
 .s-dot--green { background: var(--success); color: var(--success); }
 .s-dot--red { background: var(--danger); color: var(--danger); }
 .s-dot--yellow { background: var(--warning); color: var(--warning); }
-.s-dot--green { animation: dotPulse 2s ease-in-out infinite; }
-@keyframes dotPulse { 0%,100%{ opacity: 1; } 50%{ opacity: 0.6; } }
 
 /* ── Sheets (settings / info) — liquid glass bottom sheet ── */
 .sheet-overlay {
