@@ -31,3 +31,8 @@ paths:
     record: yes
     recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S_%path.mp4
     recordFormat: fmp4
+  all_others:
+    source: publisher
+    record: yes
+    recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S_%path.mp4
+    recordFormat: fmp4

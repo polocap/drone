@@ -17,7 +17,7 @@ const DEFAULT_CONFIG = {
   beelink_ip: '10.0.0.1',
   rtmp_port: 1935,
   api_port: 8080,
-  rtmp_url: 'rtmp://10.0.0.1:1935/live/stream'
+  rtmp_url: 'rtmp://10.0.0.1:1935/live'
 }
 
 const DEFAULT_STATE = {

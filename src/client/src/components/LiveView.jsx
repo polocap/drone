@@ -87,7 +87,7 @@ function LiveView({ pilot, config, onChangePilot }) {
 
       <main className="stream-container">
         <StreamPlayer 
-          streamUrl={getStreamUrl(pilot.rtmp_key)}
+          streamUrl={getStreamUrl()}
           onStatusChange={handleStreamStatus}
         />
         
@@ -101,7 +101,7 @@ function LiveView({ pilot, config, onChangePilot }) {
                 <span className="wifi-pass">Mot de passe: {config?.wifi_password || 'drone2024'}</span>
               </div>
               <div className="rtmp-info">
-                <code>rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live/{pilot.rtmp_key}</code>
+                <code>rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live</code>
               </div>
               <div className="external-access-info">
                 <h3>Pour les camions PC</h3>

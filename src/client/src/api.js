@@ -34,8 +34,10 @@ export async function getVideos() {
   return response.json()
 }
 
-export function getStreamUrl(pilotKey) {
-  return `${API_BASE}/live/${pilotKey}.flv`
+export function getStreamUrl() {
+  // Single global stream: the drone publishes to rtmp://10.0.0.1:1935/live
+  // HLS is served at /live/index.m3u8 via MediaMTX (proxied through the API)
+  return `${API_BASE}/live/index.m3u8`
 }
 
 export function getWebRTCLUrl(pilotKey) {

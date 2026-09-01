@@ -1,4 +1,4 @@
-import flvjs from 'flv.js'
+import Hls from 'hls.js'
 import { useEffect, useRef } from 'react'
 
 const BASE_RETRY_DELAY_MS = 1000
@@ -8,118 +8,133 @@ const MAX_BUFFER_LAG_SECONDS = 2
 
 function StreamPlayer({ streamUrl, onStatusChange }) {
   const videoRef = useRef(null)
-  const playerRef = useRef(null)
+  const hlsRef = useRef(null)
   const retryCountRef = useRef(0)
   const retryTimeoutRef = useRef(null)
   const bufferCheckIntervalRef = useRef(null)
 
   useEffect(() => {
-    if (!flvjs.isSupported()) {
-      console.error('FLV.js non supporté')
-      return
+    const videoElement = videoRef.current
+    let destroyed = false
+
+    const cleanupHls = () => {
+      if (hlsRef.current) {
+        try {
+          hlsRef.current.destroy()
+        } catch (e) {
+          console.warn('Cleanup HLS error:', e)
+        }
+        hlsRef.current = null
+      }
     }
 
-    const videoElement = videoRef.current
-    
+    const scheduleRetry = () => {
+      if (destroyed) return
+      if (retryCountRef.current < MAX_RETRIES) {
+        const delay = Math.min(
+          BASE_RETRY_DELAY_MS * Math.pow(2, retryCountRef.current),
+          MAX_RETRY_DELAY_MS
+        )
+        retryCountRef.current++
+        console.log(`Reconnexion HLS dans ${delay}ms (${retryCountRef.current}/${MAX_RETRIES})`)
+        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+        retryTimeoutRef.current = setTimeout(() => {
+          if (!destroyed) createPlayer()
+        }, delay)
+      }
+    }
+
     const createPlayer = () => {
-      if (playerRef.current) {
-        try {
-          playerRef.current.pause()
-          playerRef.current.unload()
-          playerRef.current.detachMediaElement()
-          playerRef.current.destroy()
-        } catch (e) {
-          console.warn('Cleanup player error:', e)
-        }
+      cleanupHls()
+      if (destroyed) return
+
+      // Native HLS support (Safari)
+      if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        videoElement.src = streamUrl
+        videoElement.load()
+        videoElement.play().catch(() => {
+          console.log('Autoplay bloqué, interaction utilisateur requise')
+        })
+        return
       }
 
-      const flvPlayer = flvjs.createPlayer({
-        type: 'flv',
-        url: streamUrl,
-        isLive: true,
-        hasAudio: true,
-        hasVideo: true,
-        cors: true,
+      if (!Hls.isSupported()) {
+        console.error('HLS.js non supporté sur ce navigateur')
+        onStatusChange('error')
+        return
+      }
+
+      const hls = new Hls({
         enableWorker: true,
-        enableStashBuffer: false,
-        stashInitialSize: 128,
-        lazyLoad: false,
-        lazyLoadMaxDuration: 0,
-        seekType: 'range',
-        autoCleanupSourceBuffer: true,
-        autoCleanupMaxBackwardDuration: 3,
-        autoCleanupMinBackwardDuration: 1,
-        fixAudioTimestampGap: true
-      }, {
-        enableWorker: true,
-        enableStashBuffer: false,
-        stashInitialSize: 128
+        lowLatencyMode: true,
+        backBufferLength: 30,
+        maxBufferLength: 10,
+        liveSyncDurationCount: 3,
+        liveMaxLatencyDurationCount: 5,
       })
 
-      flvPlayer.attachMediaElement(videoElement)
-      flvPlayer.load()
+      hls.loadSource(streamUrl)
+      hls.attachMedia(videoElement)
 
-      flvPlayer.on(flvjs.Events.METADATA_ARRIVED, () => {
+      hls.on(Hls.Events.MANIFEST_PARSED, () => {
         retryCountRef.current = 0
         onStatusChange('connected')
+        videoElement.play().catch(() => {
+          console.log('Autoplay bloqué, interaction utilisateur requise')
+        })
       })
 
-      flvPlayer.on(flvjs.Events.ERROR, (errorType, errorDetail) => {
-        console.error('Erreur lecteur FLV:', errorType, errorDetail)
-        onStatusChange('error')
-        
-        if (retryCountRef.current < MAX_RETRIES) {
-          const delay = Math.min(
-            BASE_RETRY_DELAY_MS * Math.pow(2, retryCountRef.current),
-            MAX_RETRY_DELAY_MS
-          )
-          retryCountRef.current++
-          
-          console.log(`Reconnexion dans ${delay}ms (${retryCountRef.current}/${MAX_RETRIES})`)
-          
-          if (retryTimeoutRef.current) {
-            clearTimeout(retryTimeoutRef.current)
-          }
-          
-          retryTimeoutRef.current = setTimeout(() => {
-            try {
-              createPlayer()
-              videoElement.play().catch(() => {})
-            } catch (e) {
-              console.error('Reconnexion échouée:', e)
-            }
-          }, delay)
-        }
-      })
-
-      flvPlayer.on(flvjs.Events.STATISTICS_INFO, (stats) => {
-        if (videoElement.buffered.length > 0) {
-          const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1)
-          const currentTime = videoElement.currentTime
-          const lag = bufferedEnd - currentTime
-          
-          if (lag > MAX_BUFFER_LAG_SECONDS) {
-            console.warn(`Buffer lag détecté: ${lag.toFixed(2)}s, saut au live`)
-            videoElement.currentTime = bufferedEnd - 0.5
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        // Ignore bufferStalled errors, let HLS recover
+        if (data.details === 'bufferStalledError') return
+        console.error('Erreur HLS:', data.type, data.details, data)
+        if (data.fatal) {
+          onStatusChange('error')
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.log('Erreur réseau HLS, tentative de recovery...')
+              hls.startLoad()
+              scheduleRetry()
+              break
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.log('Erreur média HLS, tentative de recoverMediaError...')
+              hls.recoverMediaError()
+              scheduleRetry()
+              break
+            default:
+              hls.destroy()
+              scheduleRetry()
+              break
           }
         }
       })
 
-      playerRef.current = flvPlayer
+      hlsRef.current = hls
+    }
 
-      videoElement.play().catch(e => {
-        console.log('Autoplay bloqué, interaction utilisateur requise')
-      })
+    // Native HLS events for Safari path
+    const onLoadedMetadata = () => {
+      retryCountRef.current = 0
+      onStatusChange('connected')
+    }
+    const onError = () => {
+      console.error('Erreur vidéo native')
+      onStatusChange('error')
+      scheduleRetry()
+    }
+
+    if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+      videoElement.addEventListener('loadedmetadata', onLoadedMetadata)
+      videoElement.addEventListener('error', onError)
     }
 
     createPlayer()
-    
+
     bufferCheckIntervalRef.current = setInterval(() => {
       if (videoElement.buffered.length > 0 && !videoElement.paused) {
         const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1)
         const currentTime = videoElement.currentTime
         const lag = bufferedEnd - currentTime
-        
         if (lag > MAX_BUFFER_LAG_SECONDS) {
           console.warn(`Buffer lag vérifié: ${lag.toFixed(2)}s, saut au live`)
           videoElement.currentTime = bufferedEnd - 0.5
@@ -128,23 +143,16 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
     }, 2000)
 
     return () => {
-      if (retryTimeoutRef.current) {
-        clearTimeout(retryTimeoutRef.current)
+      destroyed = true
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+      if (bufferCheckIntervalRef.current) clearInterval(bufferCheckIntervalRef.current)
+      if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        videoElement.removeEventListener('loadedmetadata', onLoadedMetadata)
+        videoElement.removeEventListener('error', onError)
+        videoElement.removeAttribute('src')
+        videoElement.load()
       }
-      if (bufferCheckIntervalRef.current) {
-        clearInterval(bufferCheckIntervalRef.current)
-      }
-      if (playerRef.current) {
-        try {
-          playerRef.current.pause()
-          playerRef.current.unload()
-          playerRef.current.detachMediaElement()
-          playerRef.current.destroy()
-        } catch (e) {
-          console.warn('Cleanup error:', e)
-        }
-        playerRef.current = null
-      }
+      cleanupHls()
     }
   }, [streamUrl, onStatusChange])
 
