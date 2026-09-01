@@ -6,19 +6,26 @@ const MAX_RETRY_DELAY_MS = 30000
 const MAX_RETRIES = 10
 
 // --- WebRTC (WHEP) helpers ---
-function getWhepUrl() {
+function getWhepUrls() {
   const host = window.location.hostname || '10.0.0.1'
-  return `http://${host}:8889/live/whep`
+  // Try via 8080 proxy first (same origin, no CORS/firewall issues for WiFi clients)
+  // then direct 8889. Both serve the same MediaMTX WHEP endpoint.
+  return [
+    `http://${host}:8080/live/whep`,
+    `http://${host}:8889/live/whep`,
+  ]
 }
 
 async function startWebRTC(videoEl, onStatusChange, signal) {
   const pc = new RTCPeerConnection({
-    iceServers: [],
+    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     bundlePolicy: 'max-bundle',
   })
 
+  // Drone currently sends H264 only (1 track). Keep audio optional — don't require it.
   pc.addTransceiver('video', { direction: 'recvonly' })
-  pc.addTransceiver('audio', { direction: 'recvonly' })
+  // Audio is optional; MediaMTX will handle missing track without error
+  try { pc.addTransceiver('audio', { direction: 'recvonly' }) } catch {}
 
   pc.ontrack = (event) => {
     if (event.streams && event.streams[0]) {
@@ -68,18 +75,34 @@ async function startWebRTC(videoEl, onStatusChange, signal) {
     throw new Error('aborted')
   }
 
-  const url = getWhepUrl()
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/sdp' },
-    body: pc.localDescription.sdp,
-    signal,
-  })
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => '')
+  const urls = getWhepUrls()
+  let lastErr = null
+  let res = null
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/sdp' },
+        body: pc.localDescription.sdp,
+        signal,
+      })
+      if (!r.ok) {
+        const txt = await r.text().catch(() => '')
+        lastErr = new Error(`WHEP ${r.status} ${txt} @${url}`)
+        console.warn(lastErr.message)
+        continue
+      }
+      res = r
+      break
+    } catch (e) {
+      lastErr = e
+      console.warn(`WHEP fetch failed @${url}:`, e.message)
+      if (signal.aborted) throw e
+    }
+  }
+  if (!res) {
     pc.close()
-    throw new Error(`WHEP ${res.status} ${txt}`)
+    throw lastErr || new Error('WHEP all urls failed')
   }
 
   const answerSdp = await res.text()

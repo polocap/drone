@@ -8,6 +8,33 @@ const RTMP_TIMEOUT_MS = parseInt(process.env.RTMP_TIMEOUT_MS) || 10000
 const FFMPEG_MAX_MEM_MB = parseInt(process.env.FFMPEG_MAX_MEM_MB) || 1024
 
 export function setupProxy(app) {
+  // WHEP / WebRTC via 8080 proxy — lets remote PCs on WiFi use WebRTC without opening 8889 directly
+  // MediaMTX WHEP is POST http://<host>:8889/live/whep
+  app.all('/live/whep', (req, res) => {
+    const proxyUrl = `http://127.0.0.1:8889/live/whep`
+    const proxyReq = http.request(
+      proxyUrl,
+      {
+        method: req.method,
+        headers: { ...req.headers, host: '127.0.0.1:8889' },
+        timeout: RTMP_TIMEOUT_MS,
+      },
+      (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers)
+        proxyRes.pipe(res)
+      }
+    )
+    req.pipe(proxyReq)
+    proxyReq.on('error', (e) => {
+      console.error('Erreur proxy WHEP:', e)
+      if (!res.headersSent) res.status(502).json({ error: 'Erreur proxy WHEP' })
+    })
+    proxyReq.on('timeout', () => {
+      proxyReq.destroy()
+      if (!res.headersSent) res.status(504).json({ error: 'Proxy timeout' })
+    })
+  })
+
   app.all('/live/*', (req, res) => {
     const streamPath = req.params[0]
     const proxyUrl = `http://127.0.0.1:8888/live/${streamPath}`
