@@ -1,0 +1,16 @@
+[
+  {
+    "id": "m350-01",
+    "name": "M350 Alpha",
+    "type": "DJI M350 RTK",
+    "unit": "CIS Paris",
+    "description": "Drone principal — nacelle H30T"
+  },
+  {
+    "id": "mavic-02",
+    "name": "Mavic Bravo",
+    "type": "DJI Mavic 3T",
+    "unit": "GRIMP",
+    "description": "Drone reconnaissance thermique"
+  }
+]

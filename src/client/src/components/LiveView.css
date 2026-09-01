@@ -113,7 +113,7 @@
 .dock-item:active { transform: scale(0.96); background: rgba(255,255,255,0.10); }
 .dock-item--icon {
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   padding: 4px 14px;
 }
 .dock-item--icon svg {
@@ -316,5 +316,13 @@
 .sheet-btn--primary { background: #fff; color: #1c1c1e; }
 .sheet-btn--full { width: 100%; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.sheet-wifi-box { background: rgba(255,255,255,0.04); border: 0.5px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 12px; }
+.sheet-wifi-hint { font-size: 0.76rem; color: var(--text-secondary); line-height: 1.45; margin-bottom: 10px; }
+.sheet-msg { margin-top: 8px; padding: 8px 10px; border-radius: 10px; font-size: 0.78rem; line-height: 1.4; }
+.sheet-msg--success { background: rgba(48,209,88,0.14); color: #30d158; border: 0.5px solid rgba(48,209,88,0.22); }
+.sheet-msg--error { background: rgba(255,59,48,0.12); color: #ff3b30; border: 0.5px solid rgba(255,59,48,0.18); }
+.sheet-wifi-confirm { margin-top: 12px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.08); }
+.sheet-wifi-confirm p { font-size: 0.84rem; color: #fff; line-height: 1.4; margin-bottom: 10px; text-align: center; }
 
 @keyframes overlayIn { from{opacity:0} to{opacity:1} }

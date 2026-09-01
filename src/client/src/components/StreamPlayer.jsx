@@ -6,17 +6,31 @@ const MAX_RETRY_DELAY_MS = 30000
 const MAX_RETRIES = 10
 
 // --- WebRTC (WHEP) helpers ---
-function getWhepUrls() {
+function getWhepUrls(streamUrl) {
   const host = window.location.hostname || '10.0.0.1'
-  // Try via 8080 proxy first (same origin, no CORS/firewall issues for WiFi clients)
-  // then direct 8889. Both serve the same MediaMTX WHEP endpoint.
+  // Derive WHEP path from HLS streamUrl: /live/index.m3u8 -> /live/whep ; /live/drone123/index.m3u8 -> /live/drone123/whep
+  let whepPath = '/live/whep'
+  try {
+    if (streamUrl) {
+      const u = new URL(streamUrl, `http://${host}`)
+      let p = u.pathname // e.g. /live/index.m3u8 or /live/drone123/index.m3u8 or /live/whep
+      if (p.endsWith('/index.m3u8')) p = p.replace(/\/index\.m3u8$/, '/whep')
+      else if (p.endsWith('.m3u8')) p = p.replace(/\.m3u8$/, '/whep')
+      else if (!p.endsWith('/whep')) p = p.replace(/\/$/, '') + '/whep'
+      // ensure leading /
+      if (!p.startsWith('/')) p = '/' + p
+      // fallback to /live/whep if path looks odd
+      if (!p.startsWith('/live')) p = '/live/whep'
+      whepPath = p
+    }
+  } catch {}
   return [
-    `http://${host}:8080/live/whep`,
-    `http://${host}:8889/live/whep`,
+    `http://${host}:8080${whepPath}`,
+    `http://${host}:8889${whepPath}`,
   ]
 }
 
-async function startWebRTC(videoEl, onStatusChange, signal) {
+async function startWebRTC(videoEl, streamUrl, onStatusChange, signal) {
   const pc = new RTCPeerConnection({
     iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     bundlePolicy: 'max-bundle',
@@ -75,7 +89,7 @@ async function startWebRTC(videoEl, onStatusChange, signal) {
     throw new Error('aborted')
   }
 
-  const urls = getWhepUrls()
+  const urls = getWhepUrls(streamUrl)
   let lastErr = null
   let res = null
   for (const url of urls) {
@@ -247,7 +261,7 @@ function StreamPlayer({ streamUrl, onStatusChange }) {
       if (destroyed || signal.aborted) return
 
       try {
-        const pc = await startWebRTC(videoEl, notify, signal)
+        const pc = await startWebRTC(videoEl, streamUrl, notify, signal)
         if (destroyed || signal.aborted) {
           pc.close()
           return

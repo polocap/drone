@@ -5,6 +5,7 @@ import videosRouter from './routes/videos.js'
 import configRouter from './routes/config.js'
 import batteryRouter from './routes/battery.js'
 import systemRouter from './routes/system.js'
+import dronesRouter from './routes/drones.js'
 import { setupProxy } from './services/proxy.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -32,6 +33,7 @@ app.use('/api/videos', videosRouter)
 app.use('/api/config', configRouter)
 app.use('/api/battery', batteryRouter)
 app.use('/api/system', systemRouter)
+app.use('/api/drones', dronesRouter)
 app.use('/api/pilots', configRouter)
 
 setupProxy(app)

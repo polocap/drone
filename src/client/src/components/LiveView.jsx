@@ -18,20 +18,38 @@ function StatusDot({ state }) {
   return <span className={`s-dot s-dot--${state}`} />
 }
 
+function getDroneStreamUrl(droneId) {
+  if (droneId) return `/live/${encodeURIComponent(droneId)}/index.m3u8`
+  return getStreamUrl()
+}
+
 function SettingsModal({ open, onClose, config }) {
   const [recording, setRecording] = useState(true)
   const [externalEnabled, setExternalEnabled] = useState(false)
   const [rtmpUrl, setRtmpUrl] = useState(config?.rtmp_url || 'rtmp://10.0.0.1:1935/live')
+  const [wifiPassword, setWifiPassword] = useState('')
+  const [wifiSsid, setWifiSsid] = useState('')
+  const [wifiSaving, setWifiSaving] = useState(false)
+  const [wifiMsg, setWifiMsg] = useState(null)
+  const [showWifiConfirm, setShowWifiConfirm] = useState(false)
 
-  // load saved settings
+  // load saved settings + wifi
   useEffect(() => {
     if (!open) return
+    setWifiMsg(null)
     fetch('/api/config/settings').then(r=>r.json()).then(d=>{
       if (d.recording_enabled !== undefined) setRecording(d.recording_enabled)
       if (d.external_rtmp_enabled !== undefined) setExternalEnabled(d.external_rtmp_enabled)
       if (d.external_rtmp_url) setRtmpUrl(d.external_rtmp_url)
     }).catch(()=>{})
-  }, [open])
+    fetch('/api/system/wifi').then(r=>r.json()).then(d=>{
+      if (d.password) setWifiPassword(d.password)
+      if (d.ssid) setWifiSsid(d.ssid)
+    }).catch(()=> {
+      setWifiPassword(config?.wifi_password || '')
+      setWifiSsid(config?.wifi_ssid || '')
+    })
+  }, [open, config])
 
   const handleSave = async () => {
     try {
@@ -46,6 +64,34 @@ function SettingsModal({ open, onClose, config }) {
       })
     } catch {}
     onClose()
+  }
+
+  const handleWifiSave = async () => {
+    if (wifiPassword.length < 8 || wifiPassword.length > 63) {
+      setWifiMsg({ type: 'error', text: 'Mot de passe: 8-63 caractères requis' })
+      return
+    }
+    if (/\s/.test(wifiPassword)) {
+      setWifiMsg({ type: 'error', text: 'Pas d’espaces dans le mot de passe' })
+      return
+    }
+    setWifiSaving(true)
+    setWifiMsg(null)
+    try {
+      const r = await fetch('/api/system/wifi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: wifiPassword })
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.error || 'Erreur')
+      setWifiMsg({ type: 'success', text: 'Mot de passe WiFi mis à jour. Le point d’accès redémarre (10-20s). Reconnectez vos appareils.' })
+    } catch (e) {
+      setWifiMsg({ type: 'error', text: e.message })
+    } finally {
+      setWifiSaving(false)
+      setShowWifiConfirm(false)
+    }
   }
 
   if (!open) return null
@@ -98,17 +144,63 @@ function SettingsModal({ open, onClose, config }) {
           )}
         </div>
 
+        <div className="sheet-section">
+          <span className="sheet-section-label">WiFi — point d’accès</span>
+          <div className="sheet-wifi-box">
+            <p className="sheet-wifi-hint">
+              Modifier le mot de passe nécessite les droits root (le serveur tourne en root, c’est possible). <strong>Attention :</strong> tous les appareils WiFi (drones, tablettes) seront déconnectés et devront se reconnecter avec le nouveau mot de passe. Une erreur vous obligera à passer par Ethernet (192.168.100.1) pour corriger.
+            </p>
+            <div className="sheet-field">
+              <span className="sheet-field-label">Réseau (SSID) — lecture seule</span>
+              <input className="sheet-input" value={wifiSsid} readOnly disabled />
+            </div>
+            <div className="sheet-field">
+              <span className="sheet-field-label">Mot de passe WiFi (WPA2, 8-63 car.)</span>
+              <input
+                className="sheet-input"
+                value={wifiPassword}
+                onChange={e=>setWifiPassword(e.target.value)}
+                placeholder="min. 8 caractères, sans espaces"
+                spellCheck={false}
+                type="text"
+                maxLength={63}
+              />
+            </div>
+            {wifiMsg && (
+              <div className={`sheet-msg sheet-msg--${wifiMsg.type}`}>{wifiMsg.text}</div>
+            )}
+            <button
+              className="sheet-btn sheet-btn--ghost"
+              style={{ marginTop: 8 }}
+              onClick={()=>setShowWifiConfirm(true)}
+              disabled={wifiSaving}
+            >
+              {wifiSaving ? 'Enregistrement…' : 'Mettre à jour le mot de passe WiFi'}
+            </button>
+          </div>
+        </div>
+
         <div className="sheet-actions">
           <button className="sheet-btn sheet-btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="sheet-btn sheet-btn--primary" onClick={handleSave}>Enregistrer</button>
+          <button className="sheet-btn sheet-btn--primary" onClick={handleSave}>Enregistrer (enregistrement / RTMP)</button>
         </div>
+
+        {showWifiConfirm && (
+          <div className="sheet-wifi-confirm">
+            <p>Changer le mot de passe va redémarrer le WiFi et déconnecter tous les clients. Continuer ?</p>
+            <div className="sheet-actions">
+              <button className="sheet-btn sheet-btn--ghost" onClick={()=>setShowWifiConfirm(false)}>Annuler</button>
+              <button className="sheet-btn sheet-btn--primary" onClick={handleWifiSave} disabled={wifiSaving}>Confirmer</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 function InfoModal({ open, onClose, config, isConnected }) {
-  const [status, setStatus] = useState({ wifi: 'loading', rtmp: 'loading' })
+  const [status, setStatus] = useState({ wifi: 'loading' })
 
   useEffect(() => {
     if (!open) return
@@ -117,12 +209,9 @@ function InfoModal({ open, onClose, config, isConnected }) {
       try {
         const r = await fetch('/api/system/status')
         const d = await r.json()
-        if (!cancelled) setStatus({
-          wifi: d.wifi ? 'green' : 'red',
-          rtmp: d.rtmp ? (d.rtmp === 'degraded' ? 'yellow' : 'green') : 'red',
-        })
+        if (!cancelled) setStatus({ wifi: d.wifi ? 'green' : 'red' })
       } catch {
-        if (!cancelled) setStatus({ wifi: 'yellow', rtmp: 'yellow' })
+        if (!cancelled) setStatus({ wifi: 'yellow' })
       }
     }
     fetchStatus()
@@ -182,17 +271,75 @@ function InfoModal({ open, onClose, config, isConnected }) {
           <span className="sheet-section-label">Transmission vers autres écrans</span>
           <div className="info-card">
             <div className="info-card-row">
-              <span className="info-card-k">Flux RTMP</span>
+              <span className="info-card-k">Flux RTMP générique</span>
               <span className="info-card-v mono">rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live</span>
+            </div>
+            <div className="info-card-row">
+              <span className="info-card-k">Flux RTMP par drone</span>
+              <span className="info-card-v mono">rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live/[drone_id]</span>
             </div>
             <div className="info-card-row">
               <span className="info-card-k">Accès navigateur</span>
               <span className="info-card-v mono">http://{config?.beelink_ip || '10.0.0.1'}:8080</span>
             </div>
-            <p className="info-hint">Connectez-vous au WiFi ci-dessus, puis ouvrez le lien dans un navigateur sur le réseau.</p>
+            <p className="info-hint">Chaque drone peut publier sur son propre lien <code className="mono">/live/[drone_id]</code> (ex: /live/m350-01) pour être identifié. Le lien générique <code className="mono">/live</code> fonctionne aussi mais sans info drone.</p>
           </div>
         </div>
 
+        <button className="sheet-btn sheet-btn--ghost sheet-btn--full" onClick={onClose}>Fermer</button>
+      </div>
+    </div>
+  )
+}
+
+function DroneInfoModal({ open, onClose, drone }) {
+  if (!open || !drone) return null
+  return (
+    <div className="sheet-overlay" onClick={onClose}>
+      <div className="sheet-glass" onClick={e=>e.stopPropagation()}>
+        <div className="sheet-handle" />
+        <h3 className="sheet-title">Drone</h3>
+        <div className="sheet-section">
+          <div className="info-card">
+            <div className="info-card-row">
+              <span className="info-card-k">ID</span>
+              <span className="info-card-v mono">{drone.id}</span>
+            </div>
+            <div className="info-card-row">
+              <span className="info-card-k">Nom</span>
+              <span className="info-card-v">{drone.name}</span>
+            </div>
+            {drone.type && (
+              <div className="info-card-row">
+                <span className="info-card-k">Type</span>
+                <span className="info-card-v">{drone.type}</span>
+              </div>
+            )}
+            {drone.unit && (
+              <div className="info-card-row">
+                <span className="info-card-k">Unité</span>
+                <span className="info-card-v">{drone.unit}</span>
+              </div>
+            )}
+            {drone.description && (
+              <p className="info-hint" style={{ marginTop: 8 }}>{drone.description}</p>
+            )}
+            <div className="info-card-row" style={{ marginTop: 8 }}>
+              <span className="info-card-k">Lien RTMP</span>
+              <span className="info-card-v mono">rtmp://10.0.0.1:1935/live/{drone.id}</span>
+            </div>
+            <div className="info-card-row">
+              <span className="info-card-k">HLS</span>
+              <span className="info-card-v mono">/live/{drone.id}/index.m3u8</span>
+            </div>
+            {drone.generic && (
+              <p className="info-hint">Flux générique — aucun drone identifié (publish sur /live).</p>
+            )}
+            {drone.unknown && (
+              <p className="info-hint">Drone non référencé — ID reçu mais absent de la liste.</p>
+            )}
+          </div>
+        </div>
         <button className="sheet-btn sheet-btn--ghost sheet-btn--full" onClick={onClose}>Fermer</button>
       </div>
     </div>
@@ -205,12 +352,41 @@ function LiveView({ config }) {
   const [showSettings, setShowSettings] = useState(false)
   const [showInfo, setShowInfo] = useState(false)
   const [showShutdown, setShowShutdown] = useState(false)
+  const [showDroneInfo, setShowDroneInfo] = useState(false)
   const [shutting, setShutting] = useState(false)
+  const [activeDrone, setActiveDrone] = useState(null)
 
   useEffect(() => {
     const iv = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(iv)
   }, [])
+
+  // Poll active drone(s)
+  useEffect(() => {
+    let cancelled = false
+    async function poll() {
+      try {
+        const r = await fetch('/api/drones/active')
+        const d = await r.json()
+        if (cancelled) return
+        if (d.active && d.active.length > 0) {
+          // Prefer first non-generic with known info, else first
+          const withId = d.active.find(a => a.droneId || a.id)
+          const chosen = withId || d.active[0]
+          // Map to drone info shape for modal
+          // If generic (id null), show generic
+          setActiveDrone(chosen)
+        } else {
+          setActiveDrone(null)
+        }
+      } catch { if (!cancelled) setActiveDrone(null) }
+    }
+    poll()
+    const iv = setInterval(poll, 3000)
+    return () => { cancelled = true; clearInterval(iv) }
+  }, [])
+
+  const streamUrl = getDroneStreamUrl(activeDrone?.droneId || activeDrone?.id)
 
   const handleStreamStatus = useCallback((status) => {
     setIsConnected(status === 'connected')
@@ -231,7 +407,7 @@ function LiveView({ config }) {
       </header>
 
       <main className="stream-container">
-        <StreamPlayer streamUrl={getStreamUrl()} onStatusChange={handleStreamStatus} />
+        <StreamPlayer streamUrl={streamUrl} onStatusChange={handleStreamStatus} />
         {!isConnected && (
           <div className="waiting-overlay">
             <div className="waiting-content">
@@ -269,6 +445,20 @@ function LiveView({ config }) {
           <span className="dock-label-sm">Infos</span>
         </button>
 
+        {activeDrone && activeDrone.id && (
+          <button className="dock-item dock-item--icon" onClick={()=>setShowDroneInfo(true)} aria-label="Drone">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="9" width="18" height="6" rx="2" />
+              <path d="M7 9V7a2 2 0 0 1 2-2h2" />
+              <path d="M15 5h2a2 2 0 0 1 2 2v2" />
+              <path d="M7 15v2a2 2 0 0 0 2 2h2" />
+              <path d="M15 17h2a2 2 0 0 0 2-2v-2" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            </svg>
+            <span className="dock-label-sm">{activeDrone.name || activeDrone.id}</span>
+          </button>
+        )}
+
         <button className="dock-close" onClick={()=>setShowShutdown(true)} aria-label="Éteindre">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
             <path d="M6 6l12 12M18 6L6 18" />
@@ -278,6 +468,7 @@ function LiveView({ config }) {
 
       <SettingsModal open={showSettings} onClose={()=>setShowSettings(false)} config={config} />
       <InfoModal open={showInfo} onClose={()=>setShowInfo(false)} config={config} isConnected={isConnected} />
+      <DroneInfoModal open={showDroneInfo} onClose={()=>setShowDroneInfo(false)} drone={activeDrone} />
       <ConfirmModal
         open={showShutdown}
         onClose={()=>setShowShutdown(false)}
