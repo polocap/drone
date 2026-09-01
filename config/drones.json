@@ -1,7 +1,18 @@
 [
   {
+    "id": "UAS-FR-140453",
+    "name": "UAS-FR-140453",
+    "brand": "DJI",
+    "model": "Mavic 2 Entreprise Dual",
+    "unit": "Louhans",
+    "description": "Drone identification officielle — exploitant Louhans",
+    "image": "/assets/drone-uas-fr-140453.png"
+  },
+  {
     "id": "m350-01",
     "name": "M350 Alpha",
+    "brand": "DJI",
+    "model": "M350 RTK",
     "type": "DJI M350 RTK",
     "unit": "CIS Paris",
     "description": "Drone principal — nacelle H30T"
@@ -9,6 +20,8 @@
   {
     "id": "mavic-02",
     "name": "Mavic Bravo",
+    "brand": "DJI",
+    "model": "Mavic 3T",
     "type": "DJI Mavic 3T",
     "unit": "GRIMP",
     "description": "Drone reconnaissance thermique"

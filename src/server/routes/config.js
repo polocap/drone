@@ -14,8 +14,8 @@ const STATE_PATH = path.join(CONFIG_PATH, 'state.json')
 const SETTINGS_PATH = path.join(CONFIG_PATH, 'settings.json')
 
 const DEFAULT_CONFIG = {
-  wifi_ssid: 'DRONE-OPS-001',
-  wifi_password: 'drone2024',
+  wifi_ssid: 'corelink-001',
+  wifi_password: '9fK7qP2xL8vT4wR!3kD8mN5',
   beelink_ip: '10.0.0.1',
   rtmp_port: 1935,
   api_port: 8080,

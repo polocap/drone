@@ -27,29 +27,16 @@ function SettingsModal({ open, onClose, config }) {
   const [recording, setRecording] = useState(true)
   const [externalEnabled, setExternalEnabled] = useState(false)
   const [rtmpUrl, setRtmpUrl] = useState(config?.rtmp_url || 'rtmp://10.0.0.1:1935/live')
-  const [wifiPassword, setWifiPassword] = useState('')
-  const [wifiSsid, setWifiSsid] = useState('')
-  const [wifiSaving, setWifiSaving] = useState(false)
-  const [wifiMsg, setWifiMsg] = useState(null)
-  const [showWifiConfirm, setShowWifiConfirm] = useState(false)
 
-  // load saved settings + wifi
+  // load saved settings
   useEffect(() => {
     if (!open) return
-    setWifiMsg(null)
     fetch('/api/config/settings').then(r=>r.json()).then(d=>{
       if (d.recording_enabled !== undefined) setRecording(d.recording_enabled)
       if (d.external_rtmp_enabled !== undefined) setExternalEnabled(d.external_rtmp_enabled)
       if (d.external_rtmp_url) setRtmpUrl(d.external_rtmp_url)
     }).catch(()=>{})
-    fetch('/api/system/wifi').then(r=>r.json()).then(d=>{
-      if (d.password) setWifiPassword(d.password)
-      if (d.ssid) setWifiSsid(d.ssid)
-    }).catch(()=> {
-      setWifiPassword(config?.wifi_password || '')
-      setWifiSsid(config?.wifi_ssid || '')
-    })
-  }, [open, config])
+  }, [open])
 
   const handleSave = async () => {
     try {
@@ -64,34 +51,6 @@ function SettingsModal({ open, onClose, config }) {
       })
     } catch {}
     onClose()
-  }
-
-  const handleWifiSave = async () => {
-    if (wifiPassword.length < 8 || wifiPassword.length > 63) {
-      setWifiMsg({ type: 'error', text: 'Mot de passe: 8-63 caractères requis' })
-      return
-    }
-    if (/\s/.test(wifiPassword)) {
-      setWifiMsg({ type: 'error', text: 'Pas d’espaces dans le mot de passe' })
-      return
-    }
-    setWifiSaving(true)
-    setWifiMsg(null)
-    try {
-      const r = await fetch('/api/system/wifi', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: wifiPassword })
-      })
-      const d = await r.json()
-      if (!r.ok) throw new Error(d.error || 'Erreur')
-      setWifiMsg({ type: 'success', text: 'Mot de passe WiFi mis à jour. Le point d’accès redémarre (10-20s). Reconnectez vos appareils.' })
-    } catch (e) {
-      setWifiMsg({ type: 'error', text: e.message })
-    } finally {
-      setWifiSaving(false)
-      setShowWifiConfirm(false)
-    }
   }
 
   if (!open) return null
@@ -144,56 +103,10 @@ function SettingsModal({ open, onClose, config }) {
           )}
         </div>
 
-        <div className="sheet-section">
-          <span className="sheet-section-label">WiFi — point d’accès</span>
-          <div className="sheet-wifi-box">
-            <p className="sheet-wifi-hint">
-              Modifier le mot de passe nécessite les droits root (le serveur tourne en root, c’est possible). <strong>Attention :</strong> tous les appareils WiFi (drones, tablettes) seront déconnectés et devront se reconnecter avec le nouveau mot de passe. Une erreur vous obligera à passer par Ethernet (192.168.100.1) pour corriger.
-            </p>
-            <div className="sheet-field">
-              <span className="sheet-field-label">Réseau (SSID) — lecture seule</span>
-              <input className="sheet-input" value={wifiSsid} readOnly disabled />
-            </div>
-            <div className="sheet-field">
-              <span className="sheet-field-label">Mot de passe WiFi (WPA2, 8-63 car.)</span>
-              <input
-                className="sheet-input"
-                value={wifiPassword}
-                onChange={e=>setWifiPassword(e.target.value)}
-                placeholder="min. 8 caractères, sans espaces"
-                spellCheck={false}
-                type="text"
-                maxLength={63}
-              />
-            </div>
-            {wifiMsg && (
-              <div className={`sheet-msg sheet-msg--${wifiMsg.type}`}>{wifiMsg.text}</div>
-            )}
-            <button
-              className="sheet-btn sheet-btn--ghost"
-              style={{ marginTop: 8 }}
-              onClick={()=>setShowWifiConfirm(true)}
-              disabled={wifiSaving}
-            >
-              {wifiSaving ? 'Enregistrement…' : 'Mettre à jour le mot de passe WiFi'}
-            </button>
-          </div>
-        </div>
-
         <div className="sheet-actions">
           <button className="sheet-btn sheet-btn--ghost" onClick={onClose}>Annuler</button>
-          <button className="sheet-btn sheet-btn--primary" onClick={handleSave}>Enregistrer (enregistrement / RTMP)</button>
+          <button className="sheet-btn sheet-btn--primary" onClick={handleSave}>Enregistrer</button>
         </div>
-
-        {showWifiConfirm && (
-          <div className="sheet-wifi-confirm">
-            <p>Changer le mot de passe va redémarrer le WiFi et déconnecter tous les clients. Continuer ?</p>
-            <div className="sheet-actions">
-              <button className="sheet-btn sheet-btn--ghost" onClick={()=>setShowWifiConfirm(false)}>Annuler</button>
-              <button className="sheet-btn sheet-btn--primary" onClick={handleWifiSave} disabled={wifiSaving}>Confirmer</button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -258,11 +171,11 @@ function InfoModal({ open, onClose, config, isConnected }) {
           <div className="info-card">
             <div className="info-card-row">
               <span className="info-card-k">Réseau</span>
-              <span className="info-card-v mono">{config?.wifi_ssid || 'DRONE-OPS-001'}</span>
+              <span className="info-card-v mono">{config?.wifi_ssid || 'corelink-001'}</span>
             </div>
             <div className="info-card-row">
               <span className="info-card-k">Mot de passe</span>
-              <span className="info-card-v mono">{config?.wifi_password || 'drone2024'}</span>
+              <span className="info-card-v mono">{config?.wifi_password || '9fK7qP2xL8vT4wR!3kD8mN5'}</span>
             </div>
           </div>
         </div>
@@ -299,6 +212,11 @@ function DroneInfoModal({ open, onClose, drone }) {
       <div className="sheet-glass" onClick={e=>e.stopPropagation()}>
         <div className="sheet-handle" />
         <h3 className="sheet-title">Drone</h3>
+        {drone.image && (
+          <div style={{ padding: '0 16px 8px', textAlign: 'center' }}>
+            <img src={drone.image} alt={drone.name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 12, objectFit: 'contain' }} />
+          </div>
+        )}
         <div className="sheet-section">
           <div className="info-card">
             <div className="info-card-row">
@@ -309,6 +227,12 @@ function DroneInfoModal({ open, onClose, drone }) {
               <span className="info-card-k">Nom</span>
               <span className="info-card-v">{drone.name}</span>
             </div>
+            {(drone.brand || drone.model) && (
+              <div className="info-card-row">
+                <span className="info-card-k">Modèle</span>
+                <span className="info-card-v">{drone.brand ? `${drone.brand} ` : ''}{drone.model || ''}</span>
+              </div>
+            )}
             {drone.type && (
               <div className="info-card-row">
                 <span className="info-card-k">Type</span>
