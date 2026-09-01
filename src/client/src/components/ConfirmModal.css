@@ -1,0 +1,104 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0,0,0,0.52);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: overlayIn 0.22s ease;
+}
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-glass {
+  width: min(380px, 92vw);
+  padding: 28px 24px 22px;
+  border-radius: 22px;
+  background: rgba(44,44,46,0.78);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 0.5px solid rgba(255,255,255,0.14);
+  box-shadow:
+    0 24px 48px rgba(0,0,0,0.45),
+    0 0 0 0.5px rgba(255,255,255,0.06) inset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: modalIn 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.modal-icon svg { width: 24px; height: 24px; }
+.modal-icon--danger {
+  background: rgba(255,59,48,0.16);
+  color: #ff3b30;
+  border: 1px solid rgba(255,59,48,0.22);
+}
+.modal-icon--primary {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.modal-message {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+  max-width: 28ch;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.modal-btn {
+  flex: 1;
+  height: 44px;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.15s ease;
+}
+.modal-btn:active { transform: scale(0.97); }
+.modal-btn--ghost {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border: 0.5px solid rgba(255,255,255,0.10);
+}
+.modal-btn--ghost:active { background: rgba(255,255,255,0.12); }
+.modal-btn--danger {
+  background: #ff3b30;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255,59,48,0.32);
+}
+.modal-btn--danger:active { background: #e0342b; }
+.modal-btn--primary {
+  background: #fff;
+  color: #1c1c1e;
+}
