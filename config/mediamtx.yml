@@ -11,10 +11,17 @@ logDestinations:
 rtmp: yes
 rtmpAddress: :1935
 
-# HLS Server (port 8888)
+# HLS Server (port 8888) - Low Latency HLS
 hls: yes
 hlsAddress: :8888
 hlsAllowOrigin: '*'
+hlsVariant: lowLatency
+hlsAlwaysRemux: yes
+hlsSegmentCount: 7
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+hlsMuxerCloseAfter: 60s
 
 # WebRTC (port 8889)
 webrtc: yes
