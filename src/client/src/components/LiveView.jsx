@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import BatteryIndicator from './BatteryIndicator'
 import StreamPlayer from './StreamPlayer'
 import { getBattery, getStreamUrl } from '../api'
@@ -44,9 +44,9 @@ function LiveView({ pilot, config, onChangePilot }) {
     return () => clearTimeout(timer)
   }, [isConnected])
 
-  const handleStreamStatus = (status) => {
+  const handleStreamStatus = useCallback((status) => {
     setIsConnected(status === 'connected')
-  }
+  }, [])
 
   return (
     <div className="live-container">
