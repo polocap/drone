@@ -4,172 +4,279 @@ import { useEffect, useRef } from 'react'
 const BASE_RETRY_DELAY_MS = 1000
 const MAX_RETRY_DELAY_MS = 30000
 const MAX_RETRIES = 10
-const MAX_BUFFER_LAG_SECONDS = 1.5
+
+// --- WebRTC (WHEP) helpers ---
+function getWhepUrl() {
+  // MediaMTX WHEP endpoint for the single global stream `live`
+  // Use same host as page, port 8889 (WebRTC). Works for 10.0.0.1 and 192.168.100.1.
+  const host = window.location.hostname || '10.0.0.1'
+  return `http://${host}:8889/live/whep`
+}
+
+async function startWebRTC(videoEl, onStatusChange, signal) {
+  const pc = new RTCPeerConnection({
+    iceServers: [],
+    bundlePolicy: 'max-bundle',
+  })
+
+  // Receive only
+  pc.addTransceiver('video', { direction: 'recvonly' })
+  pc.addTransceiver('audio', { direction: 'recvonly' })
+
+  // Attach remote track to video element
+  pc.ontrack = (event) => {
+    if (event.streams && event.streams[0]) {
+      videoEl.srcObject = event.streams[0]
+    } else {
+      // Fallback: create MediaStream
+      const ms = new MediaStream([event.track])
+      videoEl.srcObject = ms
+    }
+    onStatusChange('connected')
+    videoEl.play().catch(() => {})
+  }
+
+  pc.onconnectionstatechange = () => {
+    const state = pc.connectionState
+    if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+      onStatusChange('error')
+    } else if (state === 'connected') {
+      onStatusChange('connected')
+    }
+  }
+
+  const offer = await pc.createOffer()
+  await pc.setLocalDescription(offer)
+
+  // Wait for ICE gathering to complete (or timeout 1.5s)
+  await new Promise((resolve) => {
+    if (pc.iceGatheringState === 'complete') return resolve()
+    const check = setInterval(() => {
+      if (pc.iceGatheringState === 'complete') {
+        clearInterval(check)
+        resolve()
+      }
+    }, 100)
+    pc.addEventListener('icegatheringstatechange', () => {
+      if (pc.iceGatheringState === 'complete') {
+        clearInterval(check)
+        resolve()
+      }
+    })
+    setTimeout(() => {
+      clearInterval(check)
+      resolve()
+    }, 1500)
+  })
+
+  if (signal.aborted) {
+    pc.close()
+    throw new Error('aborted')
+  }
+
+  const url = getWhepUrl()
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/sdp' },
+    body: pc.localDescription.sdp,
+    signal,
+  })
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '')
+    pc.close()
+    throw new Error(`WHEP ${res.status} ${txt}`)
+  }
+
+  const answerSdp = await res.text()
+  await pc.setRemoteDescription({ type: 'answer', sdp: answerSdp })
+
+  return pc
+}
+
+// --- HLS fallback ---
+function createHlsPlayer(videoEl, streamUrl, onStatusChange, signal, retryFn) {
+  if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+    videoEl.src = streamUrl
+    videoEl.load()
+    videoEl.play().catch(() => {})
+    return {
+      destroy() {
+        videoEl.removeAttribute('src')
+        videoEl.load()
+      },
+    }
+  }
+
+  if (!Hls.isSupported()) {
+    throw new Error('HLS not supported')
+  }
+
+  const hls = new Hls({
+    enableWorker: true,
+    lowLatencyMode: true,
+    backBufferLength: 0,
+    maxBufferLength: 1.5,
+    maxMaxBufferLength: 3,
+    maxBufferSize: 8 * 1000 * 1000,
+    liveSyncDurationCount: 1.5,
+    liveMaxLatencyDurationCount: 3,
+    liveDurationInfinity: true,
+    highBufferWatchdogPeriod: 0.5,
+    nudgeOffset: 0.05,
+    nudgeMaxRetry: 5,
+    maxFragLookUpTolerance: 0.1,
+    manifestLoadingTimeOut: 8000,
+    manifestLoadingMaxRetry: 6,
+    levelLoadingTimeOut: 8000,
+    fragLoadingTimeOut: 15000,
+  })
+
+  hls.loadSource(streamUrl)
+  hls.attachMedia(videoEl)
+
+  const onManifest = () => {
+    onStatusChange('connected')
+    videoEl.play().catch(() => {})
+  }
+  const onError = (event, data) => {
+    if (data.details === 'bufferStalledError') return
+    if (data.fatal) {
+      onStatusChange('error')
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad()
+      else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError()
+      retryFn()
+    }
+  }
+
+  hls.on(Hls.Events.MANIFEST_PARSED, onManifest)
+  hls.on(Hls.Events.ERROR, onError)
+
+  // Abort handling
+  signal.addEventListener('abort', () => hls.destroy())
+
+  return {
+    destroy() {
+      hls.off(Hls.Events.MANIFEST_PARSED, onManifest)
+      hls.off(Hls.Events.ERROR, onError)
+      hls.destroy()
+    },
+  }
+}
 
 function StreamPlayer({ streamUrl, onStatusChange }) {
   const videoRef = useRef(null)
+  const pcRef = useRef(null)
   const hlsRef = useRef(null)
   const retryCountRef = useRef(0)
   const retryTimeoutRef = useRef(null)
-  const bufferCheckIntervalRef = useRef(null)
+  const abortRef = useRef(null)
 
   useEffect(() => {
-    const videoElement = videoRef.current
+    const videoEl = videoRef.current
     let destroyed = false
+    abortRef.current = new AbortController()
+    const signal = abortRef.current.signal
 
-    const cleanupHls = () => {
+    const cleanup = () => {
+      if (pcRef.current) {
+        try { pcRef.current.close() } catch {}
+        pcRef.current = null
+      }
       if (hlsRef.current) {
-        try {
-          hlsRef.current.destroy()
-        } catch (e) {
-          console.warn('Cleanup HLS error:', e)
-        }
+        try { hlsRef.current.destroy() } catch {}
         hlsRef.current = null
+      }
+      if (videoEl) {
+        videoEl.pause()
+        videoEl.srcObject = null
+        if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+          videoEl.removeAttribute('src')
+          try { videoEl.load() } catch {}
+        }
       }
     }
 
     const scheduleRetry = () => {
-      if (destroyed) return
-      if (retryCountRef.current < MAX_RETRIES) {
-        const delay = Math.min(
-          BASE_RETRY_DELAY_MS * Math.pow(2, retryCountRef.current),
-          MAX_RETRY_DELAY_MS
-        )
-        retryCountRef.current++
-        console.log(`Reconnexion HLS dans ${delay}ms (${retryCountRef.current}/${MAX_RETRIES})`)
-        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
-        retryTimeoutRef.current = setTimeout(() => {
-          if (!destroyed) createPlayer()
-        }, delay)
-      }
+      if (destroyed || signal.aborted) return
+      if (retryCountRef.current >= MAX_RETRIES) return
+      const delay = Math.min(BASE_RETRY_DELAY_MS * Math.pow(2, retryCountRef.current), MAX_RETRY_DELAY_MS)
+      retryCountRef.current += 1
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+      retryTimeoutRef.current = setTimeout(() => {
+        if (!destroyed) start()
+      }, delay)
     }
 
-    const createPlayer = () => {
-      cleanupHls()
-      if (destroyed) return
-
-      // Native HLS support (Safari)
-      if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-        videoElement.src = streamUrl
-        videoElement.load()
-        videoElement.play().catch(() => {
-          console.log('Autoplay bloqué, interaction utilisateur requise')
-        })
-        return
-      }
-
-      if (!Hls.isSupported()) {
-        console.error('HLS.js non supporté sur ce navigateur')
-        onStatusChange('error')
-        return
-      }
-
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 0,
-        maxBufferLength: 2,
-        maxMaxBufferLength: 4,
-        maxBufferSize: 10 * 1000 * 1000,
-        liveSyncDurationCount: 2,
-        liveMaxLatencyDurationCount: 4,
-        liveDurationInfinity: true,
-        highBufferWatchdogPeriod: 1,
-        nudgeOffset: 0.1,
-        nudgeMaxRetry: 3,
-        maxFragLookUpTolerance: 0.2,
-        // Reduce stalls / latency for live streams
-        manifestLoadingTimeOut: 10000,
-        manifestLoadingMaxRetry: 6,
-        levelLoadingTimeOut: 10000,
-        fragLoadingTimeOut: 20000,
-      })
-
-      hls.loadSource(streamUrl)
-      hls.attachMedia(videoElement)
-
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    const startHls = () => {
+      try {
+        const hlsCtrl = createHlsPlayer(videoEl, streamUrl, onStatusChange, signal, scheduleRetry)
+        hlsRef.current = hlsCtrl
         retryCountRef.current = 0
-        onStatusChange('connected')
-        videoElement.play().catch(() => {
-          console.log('Autoplay bloqué, interaction utilisateur requise')
-        })
-      })
-
-      // Listen for buffer events that cause stalls
-      hls.on(Hls.Events.BUFFER_EOS, () => {
-        console.warn('HLS: end of buffer, attempting recovery')
-      })
-
-      hls.on(Hls.Events.ERROR, (event, data) => {
-        // Ignore bufferStalled errors, let HLS recover
-        if (data.details === 'bufferStalledError') return
-        console.error('Erreur HLS:', data.type, data.details, data)
-        if (data.fatal) {
-          onStatusChange('error')
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              console.log('Erreur réseau HLS, tentative de recovery...')
-              hls.startLoad()
-              scheduleRetry()
-              break
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              console.log('Erreur média HLS, tentative de recoverMediaError...')
-              hls.recoverMediaError()
-              scheduleRetry()
-              break
-            default:
-              hls.destroy()
-              scheduleRetry()
-              break
-          }
-        }
-      })
-
-      hlsRef.current = hls
+      } catch (e) {
+        console.error('HLS fallback failed', e)
+        onStatusChange('error')
+        scheduleRetry()
+      }
     }
 
-    // Native HLS events for Safari path
+    const start = async () => {
+      cleanup()
+      if (destroyed || signal.aborted) return
+
+      // Try WebRTC first for best latency / no flicker
+      try {
+        const pc = await startWebRTC(videoEl, onStatusChange, signal)
+        if (destroyed || signal.aborted) {
+          pc.close()
+          return
+        }
+        pcRef.current = pc
+        retryCountRef.current = 0
+        // WebRTC connected via ontrack/connectionstate
+        // Also set a timeout to fallback if no track in 4s
+        setTimeout(() => {
+          if (!destroyed && !videoEl.srcObject && pcRef.current === pc) {
+            console.warn('WebRTC no track after 4s, falling back to HLS')
+            try { pc.close() } catch {}
+            pcRef.current = null
+            startHls()
+          }
+        }, 4000)
+      } catch (e) {
+        if (signal.aborted) return
+        console.warn('WebRTC failed, falling back to HLS:', e.message || e)
+        startHls()
+      }
+    }
+
+    // Native HLS events for Safari path already handled in createHlsPlayer
     const onLoadedMetadata = () => {
       retryCountRef.current = 0
       onStatusChange('connected')
     }
-    const onError = () => {
-      console.error('Erreur vidéo native')
+    const onErrorNative = () => {
       onStatusChange('error')
       scheduleRetry()
     }
 
-    if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-      videoElement.addEventListener('loadedmetadata', onLoadedMetadata)
-      videoElement.addEventListener('error', onError)
+    const canNative = videoEl.canPlayType('application/vnd.apple.mpegurl')
+    if (canNative) {
+      videoEl.addEventListener('loadedmetadata', onLoadedMetadata)
+      videoEl.addEventListener('error', onErrorNative)
     }
 
-    createPlayer()
-
-    bufferCheckIntervalRef.current = setInterval(() => {
-      if (videoElement.buffered.length > 0 && !videoElement.paused) {
-        const bufferedEnd = videoElement.buffered.end(videoElement.buffered.length - 1)
-        const currentTime = videoElement.currentTime
-        const lag = bufferedEnd - currentTime
-        if (lag > MAX_BUFFER_LAG_SECONDS) {
-          console.warn(`Buffer lag vérifié: ${lag.toFixed(2)}s, saut au live`)
-          videoElement.currentTime = bufferedEnd - 0.2
-        }
-      }
-    }, 1000)
+    start()
 
     return () => {
       destroyed = true
       if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
-      if (bufferCheckIntervalRef.current) clearInterval(bufferCheckIntervalRef.current)
-      if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-        videoElement.removeEventListener('loadedmetadata', onLoadedMetadata)
-        videoElement.removeEventListener('error', onError)
-        videoElement.removeAttribute('src')
-        videoElement.load()
+      if (abortRef.current) abortRef.current.abort()
+      if (canNative) {
+        videoEl.removeEventListener('loadedmetadata', onLoadedMetadata)
+        videoEl.removeEventListener('error', onErrorNative)
       }
-      cleanupHls()
+      cleanup()
     }
   }, [streamUrl, onStatusChange])
 
