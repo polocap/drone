@@ -99,10 +99,42 @@ if [ -d /etc/dracut.conf.d ]; then
 # DRONE OPS: ensure plymouth + i915 in initrd, avoid simpledrm flicker
 add_dracutmodules+=" plymouth drm "
 add_drivers+=" i915 "
+install_items+=" /usr/share/plymouth/themes/drone-ops/* "
+install_items+=" /usr/share/plymouth/themes/drone-ops/drone-ops-logo.png "
+install_items+=" /usr/share/plymouth/themes/drone-ops/spinner-ring.png "
 hostonly="no"
 DRACUTEOF
     echo "   → wrote /etc/dracut.conf.d/50-drone-ops.conf"
 fi
+
+# initramfs-tools hook: ensure custom theme files are copied to initramfs
+# The stock plymouth hook only handles ubuntu-text/details, so we add a dedicated hook.
+if [ -d /etc/initramfs-tools/hooks ]; then
+    cat > /etc/initramfs-tools/hooks/zz-drone-ops-plymouth <<'HOOK'
+#!/bin/sh
+set -e
+PREREQ=""
+prereqs() { echo "$PREREQ"; }
+case "$1" in prereqs) prereqs; exit 0;; esac
+. /usr/share/initramfs-tools/hook-functions
+# Force-include drone-ops theme assets (script + PNGs) into initramfs
+if [ -d /usr/share/plymouth/themes/drone-ops ]; then
+    mkdir -p "${DESTDIR}/usr/share/plymouth/themes/drone-ops"
+    cp -a /usr/share/plymouth/themes/drone-ops/* "${DESTDIR}/usr/share/plymouth/themes/drone-ops/" 2>/dev/null || true
+fi
+HOOK
+    chmod +x /etc/initramfs-tools/hooks/zz-drone-ops-plymouth
+    echo "   → installed /etc/initramfs-tools/hooks/zz-drone-ops-plymouth"
+fi
+
+# Speed up boot: offline AP never has internet, so don't wait 20s for it
+echo "⚡ Optimizing boot time (mask slow online wait)..."
+systemctl mask systemd-networkd-wait-online.service 2>/dev/null || true
+systemctl disable NetworkManager-wait-online.service 2>/dev/null || true
+systemctl disable motd-news.timer 2>/dev/null || true
+systemctl disable motd-news.service 2>/dev/null || true
+systemctl mask motd-news.service 2>/dev/null || true || true
+echo "   → masked systemd-networkd-wait-online, motd-news"
 
 # Update GRUB to show only splash (no logs), and blacklist simpledrm
 echo "📝 Updating GRUB configuration..."
@@ -135,11 +167,11 @@ fi
 # plymouth only starts late from the real root and boot text shows)
 echo "🔄 Updating initramfs..."
 if command -v dracut &> /dev/null; then
-    # dracut (Ubuntu 26.04)
-    dracut -f 2>/dev/null || update-initramfs -u -k all 2>/dev/null || true
-else
-    update-initramfs -u -k all
+    # dracut (Ubuntu 26.04) - regenerate with new theme assets
+    dracut -f --regenerate-all 2>/dev/null || dracut -f 2>/dev/null || true
 fi
+# Always also run update-initramfs for initramfs-tools path
+update-initramfs -u -k all 2>/dev/null || true
 
 # Verify plymouth made it into the initramfs
 INITRD="/boot/initrd.img-$(uname -r)"
@@ -157,6 +189,20 @@ if command -v lsinitrd &> /dev/null && [ -f "$INITRD" ]; then
         echo "✅ i915 found in initramfs (early KMS enabled)"
     else
         echo "⚠️  i915 NOT in initramfs — plymouth may still bind simpledrm"
+    fi
+    # Verify theme PNGs are in initramfs (early splash needs them before root mount)
+    if lsinitrd "$INITRD" 2>/dev/null | grep -qi "drone-ops-logo"; then
+        echo "✅ drone-ops theme assets found in initramfs"
+    else
+        echo "⚠️  drone-ops PNGs NOT in initramfs — early boot will fallback to text"
+        echo "   (If dracut, check /etc/dracut.conf.d/50-drone-ops.conf install_items)"
+        lsinitrd "$INITRD" 2>/dev/null | grep -i "drone-ops" || echo "   (no drone-ops files in initramfs)"
+    fi
+fi
+# Fallback check via lsinitramfs (initramfs-tools)
+if command -v lsinitramfs &> /dev/null && [ -f "$INITRD" ]; then
+    if lsinitramfs "$INITRD" 2>/dev/null | grep -qi "drone-ops-logo"; then
+        echo "✅ drone-ops assets also in initramfs-tools image"
     fi
 fi
 

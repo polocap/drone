@@ -9,9 +9,38 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>DRONE OPS</title>
+    <style>
+      /* Static loading splash — visible instantly before React JS loads.
+         Duplicates .loading-screen from global.css so the 20-30s gap
+         between Plymouth quit and React mount is not black. */
+      html, body { margin:0; padding:0; background:#1a1a2e; }
+      #root { width:100%; min-height:100vh; }
+      .static-loading {
+        width:100%; height:100vh; min-height:100vh;
+        display:flex; flex-direction:column; align-items:center; justify-content:center;
+        background: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
+        color:#fff;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+      }
+      .static-loading .loading-brand { display:flex; align-items:baseline; margin-bottom:3rem; }
+      .static-loading .loading-logo-drone { font-size:clamp(3rem,8vw,5rem); font-weight:600; color:#fff; letter-spacing:-0.02em; }
+      .static-loading .loading-logo-ops { font-size:clamp(3rem,8vw,5rem); font-weight:700; color:#00d4ff; letter-spacing:-0.02em; }
+      .static-loading .loading-ring { width:64px; height:64px; color:#00d4ff; animation: loading-ui-ring-spin var(--duration,1s) linear infinite; }
+      @keyframes loading-ui-ring-spin { to { transform: rotate(360deg); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static splash shown until React replaces #root content -->
+      <div class="static-loading" aria-hidden="true">
+        <div class="loading-brand">
+          <span class="loading-logo-drone">drone</span><span class="loading-logo-ops">Ops</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="loading-ring" aria-hidden="true">
+          <path d="M21 12.0004C20.9999 13.901 20.3981 15.7528 19.2809 17.2904C18.1637 18.8279 16.5885 19.9723 14.7809 20.5596C12.9733 21.1469 11.0262 21.1468 9.21864 20.5594C7.41109 19.9721 5.83588 18.8276 4.71876 17.29C3.60165 15.7523 2.99999 13.9005 3 11.9999C3.00001 10.0993 3.60171 8.24755 4.71884 6.70994C5.83598 5.17233 7.4112 4.02785 9.21877 3.44052C11.0263 2.85319 12.9734 2.85316 14.781 3.44044" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
