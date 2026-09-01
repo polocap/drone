@@ -1,10 +1,10 @@
 [
   {
     "id": "UAS-FR-140453",
-    "name": "UAS-FR-140453",
+    "name": "Mavic 2",
     "brand": "DJI",
-    "model": "Mavic 2 Entreprise Dual",
-    "unit": "Louhans",
+    "model": "Mavic 2 Enterprise Dual",
+    "exploitant": "SDIS 71",
     "description": "Drone identification officielle — exploitant Louhans",
     "image": "/assets/drone-uas-fr-140453.png"
   },

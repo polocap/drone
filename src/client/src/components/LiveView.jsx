@@ -220,10 +220,6 @@ function DroneInfoModal({ open, onClose, drone }) {
         <div className="sheet-section">
           <div className="info-card">
             <div className="info-card-row">
-              <span className="info-card-k">ID</span>
-              <span className="info-card-v mono">{drone.id}</span>
-            </div>
-            <div className="info-card-row">
               <span className="info-card-k">Nom</span>
               <span className="info-card-v">{drone.name}</span>
             </div>
@@ -233,10 +229,10 @@ function DroneInfoModal({ open, onClose, drone }) {
                 <span className="info-card-v">{drone.brand ? `${drone.brand} ` : ''}{drone.model || ''}</span>
               </div>
             )}
-            {drone.type && (
+            {drone.exploitant && (
               <div className="info-card-row">
-                <span className="info-card-k">Type</span>
-                <span className="info-card-v">{drone.type}</span>
+                <span className="info-card-k">Exploitant</span>
+                <span className="info-card-v">{drone.exploitant}</span>
               </div>
             )}
             {drone.unit && (
@@ -245,17 +241,15 @@ function DroneInfoModal({ open, onClose, drone }) {
                 <span className="info-card-v">{drone.unit}</span>
               </div>
             )}
+            {drone.type && (
+              <div className="info-card-row">
+                <span className="info-card-k">Type</span>
+                <span className="info-card-v">{drone.type}</span>
+              </div>
+            )}
             {drone.description && (
               <p className="info-hint" style={{ marginTop: 8 }}>{drone.description}</p>
             )}
-            <div className="info-card-row" style={{ marginTop: 8 }}>
-              <span className="info-card-k">Lien RTMP</span>
-              <span className="info-card-v mono">rtmp://10.0.0.1:1935/live/{drone.id}</span>
-            </div>
-            <div className="info-card-row">
-              <span className="info-card-k">HLS</span>
-              <span className="info-card-v mono">/live/{drone.id}/index.m3u8</span>
-            </div>
             {drone.generic && (
               <p className="info-hint">Flux générique — aucun drone identifié (publish sur /live).</p>
             )}
@@ -371,13 +365,16 @@ function LiveView({ config }) {
 
         {activeDrone && activeDrone.id && (
           <button className="dock-item dock-item--icon" onClick={()=>setShowDroneInfo(true)} aria-label="Drone">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="9" width="18" height="6" rx="2" />
-              <path d="M7 9V7a2 2 0 0 1 2-2h2" />
-              <path d="M15 5h2a2 2 0 0 1 2 2v2" />
-              <path d="M7 15v2a2 2 0 0 0 2 2h2" />
-              <path d="M15 17h2a2 2 0 0 0 2-2v-2" />
-              <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="5" cy="5" r="2.5" />
+              <circle cx="19" cy="5" r="2.5" />
+              <circle cx="5" cy="19" r="2.5" />
+              <circle cx="19" cy="19" r="2.5" />
+              <rect x="8" y="8" width="8" height="8" rx="1.5" />
+              <line x1="5" y1="7.5" x2="8" y2="9.5" />
+              <line x1="19" y1="7.5" x2="16" y2="9.5" />
+              <line x1="5" y1="16.5" x2="8" y2="14.5" />
+              <line x1="19" y1="16.5" x2="16" y2="14.5" />
             </svg>
             <span className="dock-label-sm">{activeDrone.name || activeDrone.id}</span>
           </button>
