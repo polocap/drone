@@ -11,6 +11,8 @@ const CONFIG_PATH = process.env.CONFIG_PATH || '/etc/drone'
 const USERS_PATH = path.join(CONFIG_PATH, 'users.json')
 const STATE_PATH = path.join(CONFIG_PATH, 'state.json')
 
+const SETTINGS_PATH = path.join(CONFIG_PATH, 'settings.json')
+
 const DEFAULT_CONFIG = {
   wifi_ssid: 'DRONE-OPS-001',
   wifi_password: 'drone2024',
@@ -18,6 +20,12 @@ const DEFAULT_CONFIG = {
   rtmp_port: 1935,
   api_port: 8080,
   rtmp_url: 'rtmp://10.0.0.1:1935/live'
+}
+
+const DEFAULT_SETTINGS = {
+  recording_enabled: true,
+  external_rtmp_enabled: false,
+  external_rtmp_url: 'rtmp://example.com/live/key'
 }
 
 const DEFAULT_STATE = {
@@ -106,6 +114,39 @@ router.get('/pilots', async (req, res) => {
   } catch (error) {
     console.error('Erreur pilotes:', error)
     res.status(500).json({ error: 'Erreur lecture pilotes' })
+  }
+})
+
+router.get('/settings', async (req, res) => {
+  try {
+    await ensureConfigDir()
+    let settings = { ...DEFAULT_SETTINGS }
+    try {
+      const data = await fs.readFile(SETTINGS_PATH, 'utf8')
+      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(data) }
+    } catch {}
+    res.json(settings)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+router.post('/settings', async (req, res) => {
+  try {
+    await ensureConfigDir()
+    let settings = { ...DEFAULT_SETTINGS }
+    try {
+      const data = await fs.readFile(SETTINGS_PATH, 'utf8')
+      settings = { ...DEFAULT_SETTINGS, ...JSON.parse(data) }
+    } catch {}
+    const { recording_enabled, external_rtmp_enabled, external_rtmp_url } = req.body
+    if (typeof recording_enabled === 'boolean') settings.recording_enabled = recording_enabled
+    if (typeof external_rtmp_enabled === 'boolean') settings.external_rtmp_enabled = external_rtmp_enabled
+    if (typeof external_rtmp_url === 'string') settings.external_rtmp_url = external_rtmp_url.trim()
+    await fs.writeFile(SETTINGS_PATH, JSON.stringify(settings, null, 2))
+    res.json(settings)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
 })
 

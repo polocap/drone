@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url'
 import videosRouter from './routes/videos.js'
 import configRouter from './routes/config.js'
 import batteryRouter from './routes/battery.js'
+import systemRouter from './routes/system.js'
 import { setupProxy } from './services/proxy.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -19,6 +20,7 @@ app.use(express.static(path.join(__dirname, '../../dist')))
 app.use('/api/videos', videosRouter)
 app.use('/api/config', configRouter)
 app.use('/api/battery', batteryRouter)
+app.use('/api/system', systemRouter)
 app.use('/api/pilots', configRouter)
 
 setupProxy(app)
