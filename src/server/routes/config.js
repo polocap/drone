@@ -15,14 +15,14 @@ const STATE_PATH = path.join(CONFIG_PATH, 'state.json')
 const SETTINGS_PATH = path.join(CONFIG_PATH, 'settings.json')
 
 const DEFAULT_CONFIG = {
-  wifi_ssid: 'corelink-001',
+  wifi_ssid: 'corelink-001-drone',
   wifi_password: '9fK7qP2xL8vT4wR!3kD8mN5',
   beelink_ip: '10.0.0.1',
   rtmp_port: 1935,
   api_port: 8080,
   rtmp_url: 'rtmp://10.0.0.1:1935/live',
   // Routeur 4G (Cudy IR02) — réseau WiFi utilisé par les écrans externes
-  router_wifi_ssid: 'corelink-screen',
+  router_wifi_ssid: 'corelink-001-screen',
   router_wifi_password: '4vR9!mQ2xK8sT7wP5nZ3',
   router_ip: '192.168.10.1',
   router_lan_ip: '192.168.10.10'

@@ -6,7 +6,7 @@
 
 set -e
 
-SSID="corelink-001"
+SSID="corelink-001-drone"
 PASSWORD="9fK7qP2xL8vT4wR!3kD8mN5"
 IP_PREFIX="10.0.0"
 AP_IP="${IP_PREFIX}.1"

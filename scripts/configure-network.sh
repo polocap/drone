@@ -110,14 +110,14 @@ network:
       addresses:
         - 10.0.0.1/24
       access-points:
-        "corelink-001":
+        "corelink-001-drone":
           mode: ap
           password: "9fK7qP2xL8vT4wR!3kD8mN5"
 EOF
         echo "✓ WiFi config: /etc/netplan/01-wifi-ap.yaml"
         echo "  Interface: $WIFI_IFACE"
         echo "  IP: 10.0.0.1"
-        echo "  SSID: corelink-001 (réservé télécommande, 5GHz si supporté)"
+        echo "  SSID: corelink-001-drone (réservé télécommande, 5GHz si supporté)"
     fi
 
     # Remove old conflicting configs
@@ -265,7 +265,7 @@ show_status() {
     fi
 
     if [ -n "$WIFI_IFACE" ]; then
-        echo "  WiFi AP:  Devices connect to 'corelink-001'"
+        echo "  WiFi AP:  Devices connect to 'corelink-001-drone'"
         echo "            Then: ssh drone@10.0.0.1"
     fi
 

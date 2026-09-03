@@ -70,7 +70,7 @@ fi
 echo ""
 echo "📶 WiFi écrans (routeur):"
 echo "-------------------------"
-echo "  SSID attendu: corelink-screen"
+echo "  SSID attendu: corelink-001-screen"
 echo "  Les écrans/tablettes s'y connectent puis ouvrent http://$(ip -br addr show 2>/dev/null | grep -v 'lo\|wlp' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1):8080"
 
 echo ""

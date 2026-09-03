@@ -9,7 +9,7 @@ et la configuration des deux réseaux WiFi du système.
                        ┌─────────────────────────────────────┐
   Télécommande DJI     │           BEELINK S12 MINI          │
   (flux drone)         │                                     │
-  WiFi corelink-001 ──►│  wlp2s0 : AP "corelink-001"         │
+  WiFi corelink-001-drone ──►│  wlp2s0 : AP "corelink-001-drone"         │
   RTMP → 10.0.0.1:1935 │  10.0.0.1  (réservé télécommande)   │
                        │                                     │
                        │  enp1s0 : Ethernet                  │
@@ -21,7 +21,7 @@ et la configuration des deux réseaux WiFi du système.
                        │  LAN : 192.168.10.1                 │
                        │  Beelink : 192.168.10.10 (réservé)  │
                        │                                     │
-                       │  WiFi "corelink-screen" (écrans)    │
+                       │  WiFi "corelink-001-screen" (écrans)    │
                        │  SIM 4G ──► Internet                │
                        └──────────────┬──────────────────────┘
                                       │
@@ -36,12 +36,18 @@ et la configuration des deux réseaux WiFi du système.
 
 | Réseau | SSID | Mot de passe | Qui s'y connecte | À quoi il sert |
 |--------|------|--------------|------------------|----------------|
-| Beelink (AP) | `corelink-001` | `9fK7qP2xL8vT4wR!3kD8mN5` | Télécommande DJI uniquement | Publier le flux drone (RTMP → 10.0.0.1:1935) |
-| Routeur 4G | `corelink-screen` | `4vR9!mQ2xK8sT7wP5nZ3` | Écrans, tablettes, Mac admin | Voir le flux, récupérer les vidéos, SSH admin, Internet 4G |
+| Beelink (AP) | `corelink-001-drone` | `9fK7qP2xL8vT4wR!3kD8mN5` | Télécommande DJI uniquement | Publier le flux drone (RTMP → 10.0.0.1:1935) |
+| Routeur 4G | `corelink-001-screen` | `4vR9!mQ2xK8sT7wP5nZ3` | Écrans, tablettes, Mac admin | Voir le flux, récupérer les vidéos, SSH admin, Internet 4G |
 
 > Le Beelink ne peut pas rejoindre le WiFi de votre Mac ou d'une box : sa
 > unique carte WiFi sert de point d'accès pour la télécommande. L'accès admin
 > passe donc par le réseau du routeur (WiFi ou Ethernet sur un port LAN).
+
+> **Test sans carte SIM** : le routeur diffuse son WiFi et son LAN même
+> **sans SIM insérée**. Tout fonctionne sauf la sortie Internet : les écrans
+> voient le flux, mais le panneau Infos affichera « 4G : Routeur OK — pas
+> d'Internet » (jaune) et la retransmission RTMP externe restera en attente.
+> Pour tester sans SIM, ignorez simplement les voyants 4G/Internet.
 
 ---
 
@@ -74,7 +80,7 @@ comportement par défaut.
    WAN. Si la SIM exige un APN manuel : *Advanced → 4G LTE → APN* (renseigner
    l'APN de l'opérateur).
 4. **Renommer le WiFi routeur** (Wireless / WLAN) :
-   - WiFi Name (SSID) : `corelink-screen`
+   - WiFi Name (SSID) : `corelink-001-screen`
    - WiFi Password : `4vR9!mQ2xK8sT7wP5nZ3`
    - Bande 2.4GHz et 5GHz : même nom possible (band steering) ; les écrans
      se connecteront tout seuls.
@@ -97,7 +103,7 @@ comportement par défaut.
 
 ## 3. Vérifications
 
-Depuis le Mac connecté au WiFi `corelink-screen` :
+Depuis le Mac connecté au WiFi `corelink-001-screen` :
 
 ```bash
 # 1. Le Beelink répond sur le LAN routeur
@@ -156,7 +162,7 @@ Notes :
 |---|---|---|
 | « 4G : Non disponible » dans Infos | Câble Ethernet débranché / routeur éteint | Vérifier le câble, les LEDs du port LAN |
 | 4G jaune « Routeur OK — pas d'Internet » | SIM absente, code PIN actif, pas de réseau | Vérifier SIM/APN, signal sur la page admin du Cudy |
-| Écrans sur `corelink-screen` n'ouvrent pas `http://192.168.10.10:8080` | Isolation client activée sur le routeur | Désactiver l'isolation dans l'admin Cudy |
+| Écrans sur `corelink-001-screen` n'ouvrent pas `http://192.168.10.10:8080` | Isolation client activée sur le routeur | Désactiver l'isolation dans l'admin Cudy |
 | `192.168.10.10` ne répond pas mais le Beelink est joignable ailleurs | Réservation DHCP non prise en compte | Relancer le Beelink, vérifier l'IP réelle dans la liste DHCP du routeur |
 | « Retransmission : Erreur » | Lien RTMP distant invalide ou serveur externe hors ligne | Vérifier l'URL dans Réglages + `journalctl -u drone-api \| grep "RTMP push"` |
-| Le WiFi routeur n'apparaît pas | SSID caché / config WiFi reset | Reconfigurer le SSID `corelink-screen` (section 2) |
+| Le WiFi routeur n'apparaît pas | SSID caché / config WiFi reset | Reconfigurer le SSID `corelink-001-screen` (section 2) |

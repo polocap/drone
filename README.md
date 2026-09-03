@@ -32,7 +32,7 @@ Solution de retransmission vidéo pour opérations drone sur le terrain. Le syst
 │         │              │  Cudy IR02   │                    │
 │         │              │ (Routeur 4G) │─── SIM 4G ──► Net  │
 │         │              └──────┬───────┘                    │
-│         │                     │ WiFi corelink-screen       │
+│         │                     │ WiFi corelink-001-screen       │
 └─────────────────────────────┼────────────────────────────┘
                               │
                   ┌───────────┼──────────────┐
@@ -45,9 +45,9 @@ Solution de retransmission vidéo pour opérations drone sur le terrain. Le syst
 ```
 
 **Rôles des réseaux:**
-- WiFi `corelink-001` (AP du Beelink, 5GHz si supporté) : **télécommande
+- WiFi `corelink-001-drone` (AP du Beelink, 5GHz si supporté) : **télécommande
   uniquement** — publie le flux RTMP vers le serveur.
-- WiFi `corelink-screen` (routeur 4G Cudy IR02) : **écrans et tablettes** —
+- WiFi `corelink-001-screen` (routeur 4G Cudy IR02) : **écrans et tablettes** —
   consultation du flux, récupération des vidéos, SSH admin, Internet 4G.
 - Ethernet Beelink ↔ Cudy : alimente la retransmission RTMP 4G et l'accès admin.
 
@@ -139,7 +139,7 @@ Les vidéos sont stockées dans `/var/lib/drone/videos/` avec la structure:
 
 Les écrans et camions PC se connectent au WiFi du **routeur 4G** et accèdent au flux sans configuration préalable:
 
-1. Se connecter au WiFi `corelink-screen` (mot de passe: `4vR9!mQ2xK8sT7wP5nZ3`)
+1. Se connecter au WiFi `corelink-001-screen` (mot de passe: `4vR9!mQ2xK8sT7wP5nZ3`)
 2. Ouvrir un navigateur
 3. Aller à `http://192.168.10.10:8080`
 
@@ -160,7 +160,7 @@ retransmis automatiquement via la 4G dès qu'un drone publie.
 2. Activer le Kill Switch (ON)             ← Allume Beelink + Écran par USB-C
 3. Attendre le boot automatique (~30s)     ← Splash screen droneOps
 4. Sélectionner le pilote sur l'écran tactile
-5. La télécommande se connecte automatiquement au WiFi "corelink-001"
+5. La télécommande se connecte automatiquement au WiFi "corelink-001-drone"
 6. Le flux RTMP démarre automatiquement     ← Clé "drone" pré-configurée
 7. Démarrer le vol                          ← Le flux s'affiche automatiquement
    (et est retransmis en 4G si "Serveur externe" est activé)
@@ -192,7 +192,7 @@ Le Beelink crée son propre point d'accès (5GHz si la carte le supporte, sinon 
 
 | Paramètre | Valeur |
 |-----------|--------|
-| SSID | `corelink-001` |
+| SSID | `corelink-001-drone` |
 | Mot de passe | `9fK7qP2xL8vT4wR!3kD8mN5` |
 | IP Beelink | `10.0.0.1` |
 | IPs clients | `10.0.0.x` (DHCP) |
@@ -202,7 +202,7 @@ Le Beelink crée son propre point d'accès (5GHz si la carte le supporte, sinon 
 
 | Paramètre | Valeur |
 |-----------|--------|
-| SSID | `corelink-screen` |
+| SSID | `corelink-001-screen` |
 | Mot de passe | `4vR9!mQ2xK8sT7wP5nZ3` |
 | IP Beelink (LAN routeur) | `192.168.10.10` (réservation DHCP) |
 | IP routeur | `192.168.10.1` |
@@ -238,9 +238,9 @@ L'estimation est initialisée au démarrage du système et décroît avec le tem
 ### Simple (recommandé)
 
 ```bash
-# Via le réseau du routeur 4G (Mac sur corelink-screen):
+# Via le réseau du routeur 4G (Mac sur corelink-001-screen):
 ssh drone@192.168.10.10
-# ou en proximité, sur le WiFi corelink-001:
+# ou en proximité, sur le WiFi corelink-001-drone:
 ssh drone@10.0.0.1
 
 cd /opt/drone
@@ -272,7 +272,7 @@ sudo systemctl restart drone-ui
 | SBC | Beelink S12 Mini | Intel N100, 8GB RAM, 256GB SSD |
 | Batterie | SmallRig VB99 Mini | 99Wh, USB-C PD 100W |
 | Écran | HDMI 1080p | Tactile capacitif 10 points |
-| Routeur 4G | Cudy IR02 | LTE Cat4, WiFi écrans `corelink-screen`, LAN 192.168.10.x |
+| Routeur 4G | Cudy IR02 | LTE Cat4, WiFi écrans `corelink-001-screen`, LAN 192.168.10.x |
 | Drone | DJI Matrice 4TD / M30T | RTMP via DJI Pilot 2 |
 
 ### Logiciel
@@ -342,8 +342,8 @@ drone/
 
 ## Sécurité
 
-- Le WiFi télécommande (`corelink-001`) est un réseau isolé (pas d'accès internet)
-- Le WiFi écrans (`corelink-screen`) donne accès à Internet via la 4G
+- Le WiFi télécommande (`corelink-001-drone`) est un réseau isolé (pas d'accès internet)
+- Le WiFi écrans (`corelink-001-screen`) donne accès à Internet via la 4G
 - La retransmission RTMP est une connexion **sortante** uniquement (pas de port exposé sur Internet)
 - Les vidéos sont stockées localement uniquement
 - Configuration des liens RTMP externes par l'administrateur uniquement

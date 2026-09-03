@@ -202,26 +202,11 @@ function InfoModal({ open, onClose, config, isConnected }) {
         </div>
 
         <div className="sheet-section">
-          <span className="sheet-section-label">WiFi télécommande — flux drone</span>
-          <div className="info-card">
-            <div className="info-card-row">
-              <span className="info-card-k">Réseau</span>
-              <span className="info-card-v mono">{config?.wifi_ssid || 'corelink-001'}</span>
-            </div>
-            <div className="info-card-row">
-              <span className="info-card-k">Mot de passe</span>
-              <span className="info-card-v mono">{config?.wifi_password || '9fK7qP2xL8vT4wR!3kD8mN5'}</span>
-            </div>
-          </div>
-          <p className="info-hint">Réservée à la télécommande DJI pour publier le flux (rtmp://{config?.beelink_ip || '10.0.0.1'}:1935).</p>
-        </div>
-
-        <div className="sheet-section">
           <span className="sheet-section-label">WiFi écrans — routeur 4G</span>
           <div className="info-card">
             <div className="info-card-row">
               <span className="info-card-k">Réseau</span>
-              <span className="info-card-v mono">{config?.router_wifi_ssid || 'corelink-screen'}</span>
+              <span className="info-card-v mono">{config?.router_wifi_ssid || 'corelink-001-screen'}</span>
             </div>
             <div className="info-card-row">
               <span className="info-card-k">Mot de passe</span>
@@ -232,22 +217,7 @@ function InfoModal({ open, onClose, config, isConnected }) {
               <span className="info-card-v mono">http://{screenIp}:8080</span>
             </div>
           </div>
-          <p className="info-hint">Connectez les écrans et tablettes à ce réseau pour afficher le flux et récupérer les vidéos.</p>
-        </div>
-
-        <div className="sheet-section">
-          <span className="sheet-section-label">Transmission vers autres écrans</span>
-          <div className="info-card">
-            <div className="info-card-row">
-              <span className="info-card-k">Flux RTMP générique</span>
-              <span className="info-card-v mono">rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live</span>
-            </div>
-            <div className="info-card-row">
-              <span className="info-card-k">Flux RTMP par drone</span>
-              <span className="info-card-v mono">rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live/[drone_id]</span>
-            </div>
-            <p className="info-hint">Chaque drone peut publier sur son propre lien <code className="mono">/live/[drone_id]</code> (ex: /live/m350-01) pour être identifié. Le lien générique <code className="mono">/live</code> fonctionne aussi mais sans info drone.</p>
-          </div>
+          <p className="info-hint">Affichage sur écrans externes : connectez-les à ce réseau WiFi puis ouvrez l'adresse ci-dessus dans un navigateur pour voir le flux et récupérer les vidéos.</p>
         </div>
 
         <button className="sheet-btn sheet-btn--ghost sheet-btn--full" onClick={onClose}>Fermer</button>
@@ -256,59 +226,91 @@ function InfoModal({ open, onClose, config, isConnected }) {
   )
 }
 
-function DroneInfoModal({ open, onClose, drone }) {
-  if (!open || !drone) return null
+function DroneInfoModal({ open, onClose, drone, config }) {
+  if (!open) return null
+
+  const beelinkIp = config?.beelink_ip || '10.0.0.1'
+
   return (
     <div className="sheet-overlay" onClick={onClose}>
       <div className="sheet-glass" onClick={e=>e.stopPropagation()}>
         <div className="sheet-handle" />
         <h3 className="sheet-title">Drone</h3>
-        {drone.image && (
-          <div style={{ padding: '0 16px 8px', textAlign: 'center' }}>
-            <img src={drone.image} alt={drone.name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 12, objectFit: 'contain' }} />
+
+        {drone ? (
+          <>
+            {drone.image && (
+              <div style={{ padding: '0 16px 8px', textAlign: 'center' }}>
+                <img src={drone.image} alt={drone.name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 12, objectFit: 'contain' }} />
+              </div>
+            )}
+            <div className="sheet-section">
+              <div className="info-card">
+                <div className="info-card-row">
+                  <span className="info-card-k">Nom</span>
+                  <span className="info-card-v">{drone.name}</span>
+                </div>
+                {(drone.brand || drone.model) && (
+                  <div className="info-card-row">
+                    <span className="info-card-k">Modèle</span>
+                    <span className="info-card-v">{drone.brand ? `${drone.brand} ` : ''}{drone.model || ''}</span>
+                  </div>
+                )}
+                <div className="info-card-row">
+                  <span className="info-card-k">ID</span>
+                  <span className="info-card-v mono">{drone.droneId || drone.id || 'live'}</span>
+                </div>
+                <div className="info-card-row">
+                  <span className="info-card-k">Lien RTMP</span>
+                  <span className="info-card-v mono">rtmp://{beelinkIp}:1935/{drone.path || 'live'}</span>
+                </div>
+                {drone.exploitant && (
+                  <div className="info-card-row">
+                    <span className="info-card-k">Exploitant</span>
+                    <span className="info-card-v">{drone.exploitant}</span>
+                  </div>
+                )}
+                {drone.unit && (
+                  <div className="info-card-row">
+                    <span className="info-card-k">Unité</span>
+                    <span className="info-card-v">{drone.unit}</span>
+                  </div>
+                )}
+                {drone.type && (
+                  <div className="info-card-row">
+                    <span className="info-card-k">Type</span>
+                    <span className="info-card-v">{drone.type}</span>
+                  </div>
+                )}
+              </div>
+              {drone.description && (
+                <p className="info-hint" style={{ marginTop: 8 }}>{drone.description}</p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="sheet-section">
+            <span className="sheet-section-label">Connecter un drone</span>
+            <div className="info-card">
+              <div className="info-card-row">
+                <span className="info-card-k">Réseau WiFi</span>
+                <span className="info-card-v mono">{config?.wifi_ssid || 'corelink-001-drone'}</span>
+              </div>
+              <div className="info-card-row">
+                <span className="info-card-k">Mot de passe</span>
+                <span className="info-card-v mono">{config?.wifi_password || '9fK7qP2xL8vT4wR!3kD8mN5'}</span>
+              </div>
+            </div>
+            <div className="info-card" style={{ marginTop: 8 }}>
+              <div className="info-card-row">
+                <span className="info-card-k">Lien RTMP attendu</span>
+                <span className="info-card-v mono">rtmp://{beelinkIp}:1935/live/[drone_id]</span>
+              </div>
+            </div>
+            <p className="info-hint">Connectez la télécommande au WiFi ci-dessus puis publiez le flux sur le lien RTMP (le lien générique <code className="mono">rtmp://{beelinkIp}:1935/live</code> fonctionne aussi, sans identification du drone).</p>
           </div>
         )}
-        <div className="sheet-section">
-          <div className="info-card">
-            <div className="info-card-row">
-              <span className="info-card-k">Nom</span>
-              <span className="info-card-v">{drone.name}</span>
-            </div>
-            {(drone.brand || drone.model) && (
-              <div className="info-card-row">
-                <span className="info-card-k">Modèle</span>
-                <span className="info-card-v">{drone.brand ? `${drone.brand} ` : ''}{drone.model || ''}</span>
-              </div>
-            )}
-            {drone.exploitant && (
-              <div className="info-card-row">
-                <span className="info-card-k">Exploitant</span>
-                <span className="info-card-v">{drone.exploitant}</span>
-              </div>
-            )}
-            {drone.unit && (
-              <div className="info-card-row">
-                <span className="info-card-k">Unité</span>
-                <span className="info-card-v">{drone.unit}</span>
-              </div>
-            )}
-            {drone.type && (
-              <div className="info-card-row">
-                <span className="info-card-k">Type</span>
-                <span className="info-card-v">{drone.type}</span>
-              </div>
-            )}
-            {drone.description && (
-              <p className="info-hint" style={{ marginTop: 8 }}>{drone.description}</p>
-            )}
-            {drone.generic && (
-              <p className="info-hint">Flux générique — aucun drone identifié (publish sur /live).</p>
-            )}
-            {drone.unknown && (
-              <p className="info-hint">Drone non référencé — ID reçu mais absent de la liste.</p>
-            )}
-          </div>
-        </div>
+
         <button className="sheet-btn sheet-btn--ghost sheet-btn--full" onClick={onClose}>Fermer</button>
       </div>
     </div>
@@ -414,22 +416,20 @@ function LiveView({ config }) {
           <span className="dock-label-sm">Infos</span>
         </button>
 
-        {activeDrone && activeDrone.id && (
-          <button className="dock-item dock-item--icon" onClick={()=>setShowDroneInfo(true)} aria-label="Drone">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="5" cy="5" r="2.5" />
-              <circle cx="19" cy="5" r="2.5" />
-              <circle cx="5" cy="19" r="2.5" />
-              <circle cx="19" cy="19" r="2.5" />
-              <rect x="8" y="8" width="8" height="8" rx="1.5" />
-              <line x1="5" y1="7.5" x2="8" y2="9.5" />
-              <line x1="19" y1="7.5" x2="16" y2="9.5" />
-              <line x1="5" y1="16.5" x2="8" y2="14.5" />
-              <line x1="19" y1="16.5" x2="16" y2="14.5" />
-            </svg>
-            <span className="dock-label-sm">{activeDrone.name || activeDrone.id}</span>
-          </button>
-        )}
+        <button className="dock-item dock-item--icon" onClick={()=>setShowDroneInfo(true)} aria-label="Drone">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="5" cy="5" r="2.5" />
+            <circle cx="19" cy="5" r="2.5" />
+            <circle cx="5" cy="19" r="2.5" />
+            <circle cx="19" cy="19" r="2.5" />
+            <rect x="8" y="8" width="8" height="8" rx="1.5" />
+            <line x1="5" y1="7.5" x2="8" y2="9.5" />
+            <line x1="19" y1="7.5" x2="16" y2="9.5" />
+            <line x1="5" y1="16.5" x2="8" y2="14.5" />
+            <line x1="19" y1="16.5" x2="16" y2="14.5" />
+          </svg>
+          <span className="dock-label-sm">{(activeDrone && (activeDrone.name || activeDrone.id)) || 'Drone'}</span>
+        </button>
 
         <button className="dock-close" onClick={()=>setShowShutdown(true)} aria-label="Éteindre">
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round">
@@ -440,7 +440,7 @@ function LiveView({ config }) {
 
       <SettingsModal open={showSettings} onClose={()=>setShowSettings(false)} config={config} />
       <InfoModal open={showInfo} onClose={()=>setShowInfo(false)} config={config} isConnected={isConnected} />
-      <DroneInfoModal open={showDroneInfo} onClose={()=>setShowDroneInfo(false)} drone={activeDrone} />
+      <DroneInfoModal open={showDroneInfo} onClose={()=>setShowDroneInfo(false)} drone={activeDrone} config={config} />
       <ConfirmModal
         open={showShutdown}
         onClose={()=>setShowShutdown(false)}

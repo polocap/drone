@@ -343,7 +343,7 @@ nmcli device status
 sudo nmcli device wifi hotspot \
   ifname wlo1 \
   con-name "corelink-hotspot" \
-  ssid "corelink-001" \
+  ssid "corelink-001-drone" \
   password "9fK7qP2xL8vT4wR!3kD8mN5"
 
 # Configurer l'IP statique
@@ -377,7 +377,7 @@ EOF
 sudo cat > /etc/hostapd/hostapd.conf <<EOF
 interface=wlo1
 driver=nl80211
-ssid=corelink-001
+ssid=corelink-001-drone
 hw_mode=g
 channel=6
 ieee80211n=1
@@ -548,7 +548,7 @@ ls -la /var/lib/drone/videos/
 
 ### 6. Vérifier l'accès distant
 
-**Depuis un appareil connecté au WiFi corelink-001:**
+**Depuis un appareil connecté au WiFi corelink-001-drone:**
 
 1. Ouvrir un navigateur
 2. Aller à `http://10.0.0.1:8080`
@@ -571,7 +571,7 @@ sudo journalctl -u mediamtx -n 50
 **Vérifier le flux RTMP:**
 ```bash
 # Sur la télécommande DJI, vérifier:
-# - Connexion au WiFi "corelink-001"
+# - Connexion au WiFi "corelink-001-drone"
 # - IP du serveur: 10.0.0.1
 # - Port: 1935
 # - Stream path: /live/{rtmp_key}
@@ -621,7 +621,7 @@ nmcli device status
 
 # Recréer le hotspot
 sudo nmcli connection delete "corelink-hotspot"
-sudo nmcli device wifi hotspot ifname wlo1 con-name "corelink-hotspot" ssid "corelink-001" password "9fK7qP2xL8vT4wR!3kD8mN5"
+sudo nmcli device wifi hotspot ifname wlo1 con-name "corelink-hotspot" ssid "corelink-001-drone" password "9fK7qP2xL8vT4wR!3kD8mN5"
 
 # Vérifier les logs
 sudo journalctl -u NetworkManager -f

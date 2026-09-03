@@ -10,7 +10,7 @@ supporte, sinon en 2.4GHz:
 
 | Paramètre | Valeur |
 |-----------|--------|
-| **SSID** | `corelink-001` |
+| **SSID** | `corelink-001-drone` |
 | **Mot de passe** | `9fK7qP2xL8vT4wR!3kD8mN5` |
 | **IP du serveur** | `10.0.0.1` |
 
@@ -22,7 +22,7 @@ récupèrent les vidéos:
 
 | Paramètre | Valeur |
 |-----------|--------|
-| **SSID** | `corelink-screen` |
+| **SSID** | `corelink-001-screen` |
 | **Mot de passe** | `4vR9!mQ2xK8sT7wP5nZ3` |
 | **IP du serveur** | `192.168.10.10` |
 | **Internet** | Oui, via la 4G |
@@ -33,7 +33,7 @@ récupèrent les vidéos:
 
 **Smartphone/Tablette/PC**:
 1. Ouvrir les paramètres WiFi
-2. Chercher le réseau `corelink-001`
+2. Chercher le réseau `corelink-001-drone`
 3. Se connecter avec le mot de passe: `9fK7qP2xL8vT4wR!3kD8mN5`
 4. L'appareil obtient automatiquement une IP (10.0.0.x)
 
@@ -50,7 +50,7 @@ ping 10.0.0.1
 
 #### Étape 1: Connexion WiFi
 1. Allumer la télécommande DJI
-2. Dans les paramètres WiFi, chercher `corelink-001`
+2. Dans les paramètres WiFi, chercher `corelink-001-drone`
 3. Se connecter avec le mot de passe: `9fK7qP2xL8vT4wR!3kD8mN5`
 
 #### Étape 2: Configuration RTMP
@@ -110,7 +110,7 @@ ping 10.0.0.1
               ↓
 ┌─────────────────────────────────────┐
 │ 3. TÉLÉCOMMANDE                     │
-│    - WiFi: corelink-001            │
+│    - WiFi: corelink-001-drone            │
 │    - RTMP: clé "drone"             │
 └─────────────────────────────────────┘
               ↓
@@ -199,7 +199,7 @@ sudo /opt/drone/scripts/healthcheck.sh
 
 ### Pas de flux vidéo
 
-1. **Vérifier WiFi**: Télécommande connectée à `corelink-001`?
+1. **Vérifier WiFi**: Télécommande connectée à `corelink-001-drone`?
 2. **Vérifier RTMP**: Paramètres corrects dans DJI Pilot?
 3. **Vérifier service**: `ssh drone@10.0.0.1` → `sudo systemctl status mediamtx`
 
