@@ -101,7 +101,10 @@ detect_5ghz_support() {
     SUPPORTS_5GHZ=0
 
     if ! command -v iw &>/dev/null; then
-        log_warn "'iw' non disponible, bande 2.4GHz utilisée"
+        # Cannot probe the card: attempt 5GHz anyway, both start paths
+        # (hostapd and NetworkManager) fall back to 2.4GHz on failure
+        log_warn "'iw' non disponible — tentative 5GHz avec repli automatique 2.4GHz"
+        SUPPORTS_5GHZ=1
         return
     fi
 
