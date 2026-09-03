@@ -369,24 +369,41 @@ use_networkmanager_hotspot() {
         return 1
     fi
 
+    # Remove stale profiles with the same name (duplicates break re-up)
+    nmcli -t -f NAME,UUID con show 2>/dev/null | awk -F: '$1=="DRONE-OPS-AP" {print $2}' | while read -r u; do
+        nmcli con delete uuid "$u" 2>/dev/null || true
+    done
+
     # Create hotspot
     nmcli dev wifi hotspot ifname "$WIFI_IFACE" ssid "$SSID" password "$PASSWORD" con-name "DRONE-OPS-AP" || {
         log_error "Échec de création du hotspot via NetworkManager"
         return 1
     }
 
-    # Prefer 5GHz for the remote feed when the card supports it
+    # Prefer 5GHz for the remote feed when supported; NM refuses band a
+    # asynchronously, so verify the real device state and fall back if needed
     if [ "$SUPPORTS_5GHZ" = "1" ]; then
         nmcli con modify "DRONE-OPS-AP" 802-11-wireless.band a 2>/dev/null || true
         nmcli con modify "DRONE-OPS-AP" 802-11-wireless.channel 36 2>/dev/null || true
-        if nmcli con up "DRONE-OPS-AP" 2>/dev/null; then
+        nmcli dev disconnect "$WIFI_IFACE" 2>/dev/null || true
+        sleep 1
+        nmcli con up "DRONE-OPS-AP" 2>/dev/null || true
+        sleep 4
+        if nmcli -t -f GENERAL.STATE dev show "$WIFI_IFACE" 2>/dev/null | grep -qi "^connected"; then
             log_success "Hotspot en 5GHz (canal 36)"
         else
             log_warn "5GHz refusé par le driver, retour en 2.4GHz"
-            nmcli con modify "DRONE-OPS-AP" 802-11-wireless.band bg 2>/dev/null || true
-            nmcli con modify "DRONE-OPS-AP" 802-11-wireless.channel 6 2>/dev/null || true
-            nmcli con up "DRONE-OPS-AP" 2>/dev/null || true
         fi
+    fi
+
+    # Guarantee: the AP must end up up and on a working 2.4GHz profile
+    if ! nmcli -t -f GENERAL.STATE dev show "$WIFI_IFACE" 2>/dev/null | grep -qi "^connected"; then
+        nmcli con modify "DRONE-OPS-AP" 802-11-wireless.band bg 2>/dev/null || true
+        nmcli con modify "DRONE-OPS-AP" 802-11-wireless.channel 6 2>/dev/null || true
+        nmcli dev disconnect "$WIFI_IFACE" 2>/dev/null || true
+        sleep 1
+        nmcli con up "DRONE-OPS-AP" 2>/dev/null || true
+        sleep 4
     fi
 
     # Configure static IP
