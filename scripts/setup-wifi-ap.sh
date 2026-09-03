@@ -352,10 +352,11 @@ start_services() {
 # Alternative: Use NetworkManager hotspot
 # Poll until the WiFi interface reaches a connected state
 # $1 = timeout in seconds
+# NB: nmcli -t prints values only ("wlp2s0:connected"), no field names
 wait_connected() {
     local timeout="${1:-20}"
     for _ in $(seq 1 "$timeout"); do
-        if nmcli -t -f GENERAL.STATE dev show "$WIFI_IFACE" 2>/dev/null | grep -q ":connected"; then
+        if nmcli -t -f DEVICE,STATE dev status 2>/dev/null | grep -q "^${WIFI_IFACE}:connected"; then
             return 0
         fi
         sleep 1
