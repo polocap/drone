@@ -364,6 +364,18 @@ wait_connected() {
     return 1
 }
 
+# Poll until the AP IP (10.0.0.1) is present on the interface
+wait_for_ip() {
+    local timeout="${1:-15}"
+    for _ in $(seq 1 "$timeout"); do
+        if ip addr show "$WIFI_IFACE" 2>/dev/null | grep -q "$AP_IP"; then
+            return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
 use_networkmanager_hotspot() {
     log_info "Configuration via NetworkManager..."
 
@@ -430,10 +442,20 @@ use_networkmanager_hotspot() {
         fi
     fi
 
-    # Configure static IP
-    nmcli con modify "DRONE-OPS-AP" ipv4.addresses "$AP_IP/24" || true
-    nmcli con modify "DRONE-OPS-AP" ipv4.method manual || true
-    nmcli con mod "DRONE-OPS-AP" connection.autoconnect yes || true
+    # Force the hotspot subnet to 10.0.0.x (the DJI remote pushes RTMP to
+    # 10.0.0.1). 'shared' keeps NM's embedded DHCP serving the clients.
+    nmcli con modify "DRONE-OPS-AP" ipv4.method shared 2>/dev/null || true
+    nmcli con modify "DRONE-OPS-AP" ipv4.addresses "${AP_IP}/24" 2>/dev/null || true
+    nmcli con mod "DRONE-OPS-AP" connection.autoconnect yes 2>/dev/null || true
+    # Re-apply IP config live (no disconnect needed)
+    nmcli device reapply "$WIFI_IFACE" 2>/dev/null || true
+    if ! wait_for_ip 15; then
+        nmcli dev disconnect "$WIFI_IFACE" 2>/dev/null || true
+        sleep 1
+        nmcli con up "DRONE-OPS-AP" 2>/dev/null || true
+        wait_connected 20 || true
+        wait_for_ip 10 || true
+    fi
 
     log_success "Hotspot NetworkManager configuré"
     return 0
