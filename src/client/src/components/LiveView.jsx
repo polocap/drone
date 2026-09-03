@@ -113,7 +113,7 @@ function SettingsModal({ open, onClose, config }) {
 }
 
 function InfoModal({ open, onClose, config, isConnected }) {
-  const [status, setStatus] = useState({ wifi: 'loading' })
+  const [status, setStatus] = useState(null)
 
   useEffect(() => {
     if (!open) return
@@ -122,15 +122,43 @@ function InfoModal({ open, onClose, config, isConnected }) {
       try {
         const r = await fetch('/api/system/status')
         const d = await r.json()
-        if (!cancelled) setStatus({ wifi: d.wifi ? 'green' : 'red' })
+        if (!cancelled) setStatus(d)
       } catch {
-        if (!cancelled) setStatus({ wifi: 'yellow' })
+        if (!cancelled) setStatus(null)
       }
     }
     fetchStatus()
     const iv = setInterval(fetchStatus, 3000)
     return () => { cancelled = true; clearInterval(iv) }
   }, [open])
+
+  const wifiState = status ? (status.wifi ? 'green' : 'red') : 'yellow'
+  const routerState = status ? (status.internet ? 'green' : status.router ? 'yellow' : 'red') : 'yellow'
+  const routerLabel = status
+    ? status.internet
+      ? 'Disponible'
+      : status.router
+        ? 'Routeur OK — pas d\'Internet'
+        : 'Non disponible'
+    : 'Vérification…'
+
+  const push = status?.external_rtmp
+  const pushState = !push
+    ? 'yellow'
+    : !push.enabled
+      ? 'yellow'
+      : push.active
+        ? 'green'
+        : push.last_error ? 'red' : 'yellow'
+  const pushLabel = !push
+    ? 'Vérification…'
+    : !push.enabled
+      ? 'Désactivée'
+      : push.active
+        ? 'Active'
+        : push.last_error ? 'Erreur' : 'En attente du flux'
+
+  const screenIp = status?.lan?.ip || config?.router_lan_ip || '192.168.10.10'
 
   if (!open) return null
   return (
@@ -145,8 +173,8 @@ function InfoModal({ open, onClose, config, isConnected }) {
             <div className="status-row">
               <span className="status-row-label">WiFi</span>
               <span className="status-row-value">
-                <StatusDot state={status.wifi} />
-                {status.wifi === 'green' ? 'Actif' : status.wifi === 'red' ? 'Inactif' : 'Vérification…'}
+                <StatusDot state={wifiState} />
+                {wifiState === 'green' ? 'Actif' : wifiState === 'red' ? 'Inactif' : 'Vérification…'}
               </span>
             </div>
             <div className="status-row">
@@ -159,15 +187,22 @@ function InfoModal({ open, onClose, config, isConnected }) {
             <div className="status-row">
               <span className="status-row-label">4G</span>
               <span className="status-row-value">
-                <StatusDot state="red" />
-                Non disponible
+                <StatusDot state={routerState} />
+                {routerLabel}
+              </span>
+            </div>
+            <div className="status-row">
+              <span className="status-row-label">Retransmission</span>
+              <span className="status-row-value">
+                <StatusDot state={pushState} />
+                {pushLabel}
               </span>
             </div>
           </div>
         </div>
 
         <div className="sheet-section">
-          <span className="sheet-section-label">Connexion WiFi</span>
+          <span className="sheet-section-label">WiFi télécommande — flux drone</span>
           <div className="info-card">
             <div className="info-card-row">
               <span className="info-card-k">Réseau</span>
@@ -178,6 +213,26 @@ function InfoModal({ open, onClose, config, isConnected }) {
               <span className="info-card-v mono">{config?.wifi_password || '9fK7qP2xL8vT4wR!3kD8mN5'}</span>
             </div>
           </div>
+          <p className="info-hint">Réservée à la télécommande DJI pour publier le flux (rtmp://{config?.beelink_ip || '10.0.0.1'}:1935).</p>
+        </div>
+
+        <div className="sheet-section">
+          <span className="sheet-section-label">WiFi écrans — routeur 4G</span>
+          <div className="info-card">
+            <div className="info-card-row">
+              <span className="info-card-k">Réseau</span>
+              <span className="info-card-v mono">{config?.router_wifi_ssid || 'corelink-screen'}</span>
+            </div>
+            <div className="info-card-row">
+              <span className="info-card-k">Mot de passe</span>
+              <span className="info-card-v mono">{config?.router_wifi_password || '4vR9!mQ2xK8sT7wP5nZ3'}</span>
+            </div>
+            <div className="info-card-row">
+              <span className="info-card-k">Accès navigateur</span>
+              <span className="info-card-v mono">http://{screenIp}:8080</span>
+            </div>
+          </div>
+          <p className="info-hint">Connectez les écrans et tablettes à ce réseau pour afficher le flux et récupérer les vidéos.</p>
         </div>
 
         <div className="sheet-section">
@@ -190,10 +245,6 @@ function InfoModal({ open, onClose, config, isConnected }) {
             <div className="info-card-row">
               <span className="info-card-k">Flux RTMP par drone</span>
               <span className="info-card-v mono">rtmp://{config?.beelink_ip || '10.0.0.1'}:1935/live/[drone_id]</span>
-            </div>
-            <div className="info-card-row">
-              <span className="info-card-k">Accès navigateur</span>
-              <span className="info-card-v mono">http://{config?.beelink_ip || '10.0.0.1'}:8080</span>
             </div>
             <p className="info-hint">Chaque drone peut publier sur son propre lien <code className="mono">/live/[drone_id]</code> (ex: /live/m350-01) pour être identifié. Le lien générique <code className="mono">/live</code> fonctionne aussi mais sans info drone.</p>
           </div>

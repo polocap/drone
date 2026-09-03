@@ -45,8 +45,12 @@ install_dependencies() {
         iw \
         hostapd \
         dnsmasq \
+        avahi-daemon \
         plymouth \
         plymouth-themes
+
+    # mDNS (hostname.local) — accès SSH via le réseau du routeur 4G
+    systemctl enable avahi-daemon 2>/dev/null || true
 
     echo "✅ Dépendances système installées"
 }
@@ -414,11 +418,11 @@ print_summary() {
     echo "  • drone-ui       - Interface tactile"
     echo ""
     echo "Configuration:"
-    echo "  • WiFi SSID:     DRONE-OPS-001"
-    echo "  • WiFi Password: drone2024"
-    echo "  • Serveur IP:    10.0.0.1"
-    echo "  • API Port:      8080"
-    echo "  • RTMP Port:     1935"
+    echo "  • WiFi télécommande: corelink-001 (10.0.0.1, 5GHz si supporté)"
+    echo "  • WiFi écrans:       corelink-screen (via routeur 4G Cudy IR02)"
+    echo "  • Routeur LAN:       192.168.10.x (Beelink conseillé: 192.168.10.10)"
+    echo "  • API Port:    8080"
+    echo "  • RTMP Port:   1935"
     echo ""
     echo "Prochaines étapes:"
     echo "  1. Modifier /etc/drone/users.json avec vos pilotes"

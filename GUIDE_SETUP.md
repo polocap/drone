@@ -2,22 +2,39 @@
 
 ## 1. Connexion WiFi
 
-### Le Beelink crée automatiquement un réseau WiFi
+### Le Beelink crée automatiquement un réseau WiFi (télécommande)
 
-**Dès le démarrage**, le Beelink expose un point d'accès WiFi:
+**Dès le démarrage**, le Beelink expose un point d'accès WiFi **réservé à la
+télécommande** (publication du flux). Il passe en **5GHz** si la carte le
+supporte, sinon en 2.4GHz:
 
 | Paramètre | Valeur |
 |-----------|--------|
-| **SSID** | `DRONE-OPS-001` |
-| **Mot de passe** | `drone2024` |
+| **SSID** | `corelink-001` |
+| **Mot de passe** | `9fK7qP2xL8vT4wR!3kD8mN5` |
 | **IP du serveur** | `10.0.0.1` |
+
+### Le routeur 4G expose le réseau WiFi « écrans »
+
+Le routeur 4G Cudy IR02 (raccordé en Ethernet au Beelink) expose un second
+réseau, **à utiliser pour les écrans et tablettes** qui affichent le flux ou
+récupèrent les vidéos:
+
+| Paramètre | Valeur |
+|-----------|--------|
+| **SSID** | `corelink-screen` |
+| **Mot de passe** | `4vR9!mQ2xK8sT7wP5nZ3` |
+| **IP du serveur** | `192.168.10.10` |
+| **Internet** | Oui, via la 4G |
+
+> Détails de raccordement et configuration du routeur: voir `GUIDE_ROUTER.md`.
 
 ### Connexion depuis un appareil
 
 **Smartphone/Tablette/PC**:
 1. Ouvrir les paramètres WiFi
-2. Chercher le réseau `DRONE-OPS-001`
-3. Se connecter avec le mot de passe: `drone2024`
+2. Chercher le réseau `corelink-001`
+3. Se connecter avec le mot de passe: `9fK7qP2xL8vT4wR!3kD8mN5`
 4. L'appareil obtient automatiquement une IP (10.0.0.x)
 
 **Vérification**:
@@ -33,8 +50,8 @@ ping 10.0.0.1
 
 #### Étape 1: Connexion WiFi
 1. Allumer la télécommande DJI
-2. Dans les paramètres WiFi, chercher `DRONE-OPS-001`
-3. Se connecter avec le mot de passe: `drone2024`
+2. Dans les paramètres WiFi, chercher `corelink-001`
+3. Se connecter avec le mot de passe: `9fK7qP2xL8vT4wR!3kD8mN5`
 
 #### Étape 2: Configuration RTMP
 
@@ -93,7 +110,7 @@ ping 10.0.0.1
               ↓
 ┌─────────────────────────────────────┐
 │ 3. TÉLÉCOMMANDE                     │
-│    - WiFi: DRONE-OPS-001            │
+│    - WiFi: corelink-001            │
 │    - RTMP: clé "drone"             │
 └─────────────────────────────────────┘
               ↓
@@ -182,7 +199,7 @@ sudo /opt/drone/scripts/healthcheck.sh
 
 ### Pas de flux vidéo
 
-1. **Vérifier WiFi**: Télécommande connectée à `DRONE-OPS-001`?
+1. **Vérifier WiFi**: Télécommande connectée à `corelink-001`?
 2. **Vérifier RTMP**: Paramètres corrects dans DJI Pilot?
 3. **Vérifier service**: `ssh drone@10.0.0.1` → `sudo systemctl status mediamtx`
 

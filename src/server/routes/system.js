@@ -1,31 +1,77 @@
 import express from 'express'
 import { exec } from 'child_process'
 import http from 'http'
+import net from 'net'
+import os from 'os'
+import fsSync from 'fs'
+import { getPushStatus, loadSettings } from '../services/rtmp-push.js'
 
 const router = express.Router()
 
+// Default route -> which interface/gateway leads to the internet (the 4G
+// router once the Beelink is wired to it).
+function defaultRoute() {
+  try {
+    const text = fsSync.readFileSync('/proc/net/route', 'utf8')
+    for (const line of text.split('\n').slice(1)) {
+      const cols = line.trim().split(/\s+/)
+      if (cols.length < 9 || cols[1] !== '00000000') continue
+      const iface = cols[0]
+      const bytes = cols[2].match(/../g).map((h) => parseInt(h, 16))
+      const gateway = `${bytes[3]}.${bytes[2]}.${bytes[1]}.${bytes[0]}`
+      return { iface, gateway }
+    }
+  } catch {}
+  return null
+}
+
+function lanIp(iface) {
+  try {
+    const addrs = os.networkInterfaces()[iface] || []
+    return (addrs.find((a) => !a.internal && a.family === 'IPv4') || {}).address || null
+  } catch {
+    return null
+  }
+}
+
+// TCP reachability probe (no external dependency, works behind the 4G NAT)
+function tcpProbe(host, port, timeout = 1500) {
+  return new Promise((resolve) => {
+    const socket = net.connect({ host, port })
+    const done = (ok) => {
+      try { socket.destroy() } catch {}
+      resolve(ok)
+    }
+    socket.setTimeout(timeout, () => done(false))
+    socket.once('connect', () => done(true))
+    socket.once('error', () => done(false))
+  })
+}
+
+async function probeFirst(host, ports) {
+  for (const port of ports) {
+    if (await tcpProbe(host, port)) return true
+  }
+  return false
+}
+
+function checkLocalHls() {
+  return new Promise((resolve) => {
+    const r = http.get('http://127.0.0.1:8888/live/index.m3u8', { timeout: 1500 }, (pr) => {
+      resolve({ code: pr.statusCode })
+      pr.destroy()
+    })
+    r.on('error', () => resolve({ code: 0 }))
+    r.on('timeout', () => { try { r.destroy() } catch {}; resolve({ code: 0 }) })
+    r.setTimeout(1500, () => { try { r.destroy() } catch {}; resolve({ code: 0 }) })
+  })
+}
+
 router.get('/status', async (req, res) => {
   let wifi = false
-  let rtmp = false
-  let rtmpState = false
 
-  // WiFi check: hostapd or ip 10.0.0.1 present, or dnsmasq lease file exists
-  try {
-    // Quick: check if we can reach MediaMTX HLS (rtmp health)
-    await new Promise((resolve) => {
-      const r = http.get('http://127.0.0.1:8888/live/index.m3u8', { timeout: 1500 }, (pr) => {
-        rtmpState = pr.statusCode < 500
-        pr.destroy()
-        resolve()
-      })
-      r.on('error', () => resolve())
-      r.on('timeout', () => { r.destroy(); resolve() })
-      r.setTimeout(1500, () => { try{ r.destroy() }catch{}; resolve() })
-    })
-  } catch {}
-
-  // For WiFi: assume up if we are serving (we are answering this request via WiFi AP)
-  // Try to check hostapd via systemctl or ip addr
+  // For WiFi AP: assume up if we are serving (we are answering this request
+  // via WiFi AP), or if the AP IP is present on an interface
   try {
     const { execSync } = await import('child_process')
     try {
@@ -34,27 +80,38 @@ router.get('/status', async (req, res) => {
     } catch { wifi = true }
   } catch { wifi = true }
 
-  // RTMP: if MediaMTX responds, consider green; if not, red
-  // Distinguish degraded if HLS returns 404 (no publisher yet) vs 200
-  let rtmpStatus = false
-  let rtmpDegraded = false
-  try {
-    await new Promise((resolve) => {
-      const r = http.get('http://127.0.0.1:8888/live/index.m3u8', { timeout: 1500 }, (pr) => {
-        if (pr.statusCode === 200) rtmpStatus = true
-        else if (pr.statusCode === 404) { rtmpStatus = true; rtmpDegraded = true }
-        pr.destroy()
-        resolve()
-      })
-      r.on('error', () => resolve())
-      r.setTimeout(1500, () => { try{ r.destroy() }catch{}; resolve() })
-    })
-  } catch {}
+  // RTMP: MediaMTX HLS answering -> green; 404 (no publisher yet) -> degraded
+  const hls = await checkLocalHls()
+  const rtmpStatus = hls.code === 200 || hls.code === 404
+  const rtmpDegraded = hls.code === 404
+
+  // Router (wired gateway) + internet (4G data) reachability
+  const route = defaultRoute()
+  const gateway = route?.gateway || null
+  const routerUp = gateway ? await probeFirst(gateway, [53, 80]) : false
+  const internetUp = routerUp ? (await probeFirst('1.1.1.1', [53]) || await probeFirst('8.8.8.8', [53])) : false
+
+  const pushRuntime = getPushStatus()
+  const pushSettings = await loadSettings()
 
   res.json({
     wifi,
     rtmp: rtmpStatus ? (rtmpDegraded ? 'degraded' : true) : false,
     rtmp_degraded: rtmpDegraded,
+    router: routerUp,
+    internet: internetUp,
+    lan: {
+      iface: route?.iface || null,
+      ip: route ? lanIp(route.iface) : null,
+      gateway,
+    },
+    external_rtmp: {
+      enabled: pushSettings.enabled,
+      url: pushSettings.url,
+      active: pushRuntime.active,
+      stream: pushRuntime.stream,
+      last_error: pushRuntime.active ? null : pushRuntime.last_error,
+    },
     timestamp: new Date().toISOString(),
   })
 })

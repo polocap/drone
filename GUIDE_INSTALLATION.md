@@ -342,21 +342,21 @@ nmcli device status
 # Créer le hotspot
 sudo nmcli device wifi hotspot \
   ifname wlo1 \
-  con-name "DRONE-OPS-HOTSPOT" \
-  ssid "DRONE-OPS-001" \
-  password "drone2024"
+  con-name "corelink-hotspot" \
+  ssid "corelink-001" \
+  password "9fK7qP2xL8vT4wR!3kD8mN5"
 
 # Configurer l'IP statique
-sudo nmcli connection modify "DRONE-OPS-HOTSPOT" \
+sudo nmcli connection modify "corelink-hotspot" \
   ipv4.addresses "10.0.0.1/24" \
   ipv4.gateway "10.0.0.1" \
   ipv4.method "shared"
 
 # Démarrer automatiquement au boot
-sudo nmcli connection modify "DRONE-OPS-HOTSPOT" connection.autoconnect yes
+sudo nmcli connection modify "corelink-hotspot" connection.autoconnect yes
 
 # Redémarrer la connexion
-sudo nmcli connection up "DRONE-OPS-HOTSPOT"
+sudo nmcli connection up "corelink-hotspot"
 ```
 
 ### Méthode 2: hostapd (avancée)
@@ -377,7 +377,7 @@ EOF
 sudo cat > /etc/hostapd/hostapd.conf <<EOF
 interface=wlo1
 driver=nl80211
-ssid=DRONE-OPS-001
+ssid=corelink-001
 hw_mode=g
 channel=6
 ieee80211n=1
@@ -387,7 +387,7 @@ auth_algs=1
 wpa=2
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
-wpa_passphrase=drone2024
+wpa_passphrase=9fK7qP2xL8vT4wR!3kD8mN5
 EOF
 
 # Configurer dnsmasq
@@ -548,7 +548,7 @@ ls -la /var/lib/drone/videos/
 
 ### 6. Vérifier l'accès distant
 
-**Depuis un appareil connecté au WiFi DRONE-OPS-001:**
+**Depuis un appareil connecté au WiFi corelink-001:**
 
 1. Ouvrir un navigateur
 2. Aller à `http://10.0.0.1:8080`
@@ -571,7 +571,7 @@ sudo journalctl -u mediamtx -n 50
 **Vérifier le flux RTMP:**
 ```bash
 # Sur la télécommande DJI, vérifier:
-# - Connexion au WiFi "DRONE-OPS-001"
+# - Connexion au WiFi "corelink-001"
 # - IP du serveur: 10.0.0.1
 # - Port: 1935
 # - Stream path: /live/{rtmp_key}
@@ -620,8 +620,8 @@ journalctl -u drone-ui -n 100
 nmcli device status
 
 # Recréer le hotspot
-sudo nmcli connection delete "DRONE-OPS-HOTSPOT"
-sudo nmcli device wifi hotspot ifname wlo1 con-name "DRONE-OPS-HOTSPOT" ssid "DRONE-OPS-001" password "drone2024"
+sudo nmcli connection delete "corelink-hotspot"
+sudo nmcli device wifi hotspot ifname wlo1 con-name "corelink-hotspot" ssid "corelink-001" password "9fK7qP2xL8vT4wR!3kD8mN5"
 
 # Vérifier les logs
 sudo journalctl -u NetworkManager -f

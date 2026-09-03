@@ -21,35 +21,35 @@ Solution de retransmission vidéo pour opérations drone sur le terrain. Le syst
 │  │ SmallRig     │      │   Beelink    │                    │
 │  │ VB99 Mini    │──────│   S12 Mini   │──────┐             │
 │  │ (Batterie)   │ USB  │  (Ubuntu)    │ HDMI │             │
-│  └──────────────┘      └──────────────┘      │             │
+│  └──────────────┘      └──────┬───────┘      │             │
 │         │                     │              │             │
-│         │                     │     ┌────────▼────────┐    │
-│         │                     │     │   Écran HDMI    │    │
-│         │                     │     │   (Tactile)     │    │
-│  ┌──────▼──────┐              │     └─────────────────┘    │
-│  │ Kill Switch │              │                            │
-│  │ (On/Off)    │              │                            │
-│  └─────────────┘              │                            │
-│                               │                            │
-│                               │ WiFi                       │
-│                               │                            │
-└───────────────────────────────┼────────────────────────────┘
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-            ┌───────▼───────┐       ┌───────▼───────┐
-            │ Télécommande  │       │ Utilisateur   │
-            │ DJI RC Plus   │       │ Annexe        │
-            │ (RTMP)        │       │ (Tablette)    │
-            └───────────────┘       └───────────────┘
-                    │                       │
-                    │                       │
-            ┌───────▼───────┐       ┌───────▼───────┐
-            │     Drone     │       │  Serveur     │
-            │  Matrice 4TD  │       │  Extérieur   │
-            │     M30T      │       │  (IP custom) │
-            └───────────────┘       └───────────────┘
+│         │                     │       ┌──────▼────────┐    │
+│         │              WiFi   │       │  Écran HDMI   │    │
+│         │           corelink  │       │  (Tactile)    │    │
+│         │            -001 AP  │       └───────────────┘    │
+│         │                     │ Ethernet                   │
+│         │              ┌──────▼───────┐                    │
+│         │              │  Cudy IR02   │                    │
+│         │              │ (Routeur 4G) │─── SIM 4G ──► Net  │
+│         │              └──────┬───────┘                    │
+│         │                     │ WiFi corelink-screen       │
+└─────────────────────────────┼────────────────────────────┘
+                              │
+                  ┌───────────┼──────────────┐
+                  ▼           ▼              ▼
+          ┌───────────┐ ┌──────────┐  ┌──────────────┐
+          │ Télécommande│ │ Écrans / │  │ Mac (admin   │
+          │ DJI RC Plus │ │ tablettes│  │ SSH)         │
+          │ (RTMP)      │ │ (flux)   │  │              │
+          └───────────┘ └──────────┘  └──────────────┘
 ```
+
+**Rôles des réseaux:**
+- WiFi `corelink-001` (AP du Beelink, 5GHz si supporté) : **télécommande
+  uniquement** — publie le flux RTMP vers le serveur.
+- WiFi `corelink-screen` (routeur 4G Cudy IR02) : **écrans et tablettes** —
+  consultation du flux, récupération des vidéos, SSH admin, Internet 4G.
+- Ethernet Beelink ↔ Cudy : alimente la retransmission RTMP 4G et l'accès admin.
 
 ## Flux de Données
 
@@ -89,7 +89,7 @@ Solution de retransmission vidéo pour opérations drone sur le terrain. Le syst
 | **Flux Live** | Affichage temps réel du flux RTMP du drone sur écran HDMI |
 | **Enregistrement** | Capture automatique des vidéos en local |
 | **Historique** | Conservation des 7 derniers jours de vol |
-| **Retransmission** | Configuration d'IP(s) externe(s) pour partage du flux |
+| **Retransmission 4G** | Push du flux vers un serveur RTMP externe via le routeur 4G (URL choisie dans les Réglages) |
 | **Interface tactile** | Sélection utilisateur + monitoring batterie |
 
 ### Utilisateurs
@@ -135,19 +135,21 @@ Les vidéos sont stockées dans `/var/lib/drone/videos/` avec la structure:
 
 **Rotation automatique**: Suppression des vidéos de plus de 7 jours (cron quotidien).
 
-### Accès Externe (Camions PC)
+### Accès Externe (Camions PC / écrans)
 
-Les camions PC peuvent se connecter au WiFi **DRONE-OPS-XXX** et accéder au flux sans configuration préalable:
+Les écrans et camions PC se connectent au WiFi du **routeur 4G** et accèdent au flux sans configuration préalable:
 
-1. Se connecter au WiFi (mot de passe: `drone2024`)
+1. Se connecter au WiFi `corelink-screen` (mot de passe: `4vR9!mQ2xK8sT7wP5nZ3`)
 2. Ouvrir un navigateur
-3. Aller à `http://10.0.0.1:8080`
+3. Aller à `http://192.168.10.10:8080`
 
-Le flux est automatiquement disponible pour tous les appareils connectés au WiFi du Beelink.
+Le flux est automatiquement disponible pour tous les appareils connectés au WiFi du routeur (voir `GUIDE_ROUTER.md`).
 
 ### Configuration des IPs (Optionnel)
 
-Si retransmission vers un serveur externe nécessaire, voir `config/servers.json.example`.
+Si retransmission vers un serveur externe nécessaire, activer « Serveur externe »
+dans les **Réglages** de l'app et saisir le lien RTMP distant. Le flux est alors
+retransmis automatiquement via la 4G dès qu'un drone publie.
 
 ## Démarrage Opérationnel
 
@@ -158,9 +160,10 @@ Si retransmission vers un serveur externe nécessaire, voir `config/servers.json
 2. Activer le Kill Switch (ON)             ← Allume Beelink + Écran par USB-C
 3. Attendre le boot automatique (~30s)     ← Splash screen droneOps
 4. Sélectionner le pilote sur l'écran tactile
-5. La télécommande se connecte automatiquement au WiFi "DRONE-OPS-001"
+5. La télécommande se connecte automatiquement au WiFi "corelink-001"
 6. Le flux RTMP démarre automatiquement     ← Clé "drone" pré-configurée
 7. Démarrer le vol                          ← Le flux s'affiche automatiquement
+   (et est retransmis en 4G si "Serveur externe" est activé)
 ```
 
 ### Configuration Télécommande DJI Mavic 2 Enterprise
@@ -179,22 +182,45 @@ Si retransmission vers un serveur externe nécessaire, voir `config/servers.json
 2. Le système s'éteint proprement (arrêt forcé après 30s)
 ```
 
-## Réseau WiFi
+## Réseaux WiFi
 
-Le Beelink crée son propre point d'accès (pas besoin de réseau externe):
+Le système expose **deux réseaux WiFi** aux rôles distincts:
+
+### 1. Réseau télécommande (AP du Beelink) — flux drone uniquement
+
+Le Beelink crée son propre point d'accès (5GHz si la carte le supporte, sinon 2.4GHz):
 
 | Paramètre | Valeur |
 |-----------|--------|
-| SSID | `DRONE-OPS-001` |
-| Mot de passe | `drone2024` |
+| SSID | `corelink-001` |
+| Mot de passe | `9fK7qP2xL8vT4wR!3kD8mN5` |
 | IP Beelink | `10.0.0.1` |
 | IPs clients | `10.0.0.x` (DHCP) |
+| Usage | Télécommande DJI (publication RTMP) — pas d'Internet |
+
+### 2. Réseau écrans (routeur 4G Cudy IR02) — consultation + Internet
+
+| Paramètre | Valeur |
+|-----------|--------|
+| SSID | `corelink-screen` |
+| Mot de passe | `4vR9!mQ2xK8sT7wP5nZ3` |
+| IP Beelink (LAN routeur) | `192.168.10.10` (réservation DHCP) |
+| IP routeur | `192.168.10.1` |
+| Usage | Écrans/tablettes (flux + vidéos), SSH admin, Internet 4G |
 
 ### Accès utilisateur annexe
 
-Une fois connecté au WiFi, accéder à:
-- **Flux live**: `http://10.0.0.1:8080` (interface web)
-- **Vidéos historisées**: `http://10.0.0.1:8080/videos`
+Une fois connecté au WiFi écrans, accéder à:
+- **Flux live**: `http://192.168.10.10:8080` (interface web)
+- **Vidéos historisées**: `http://192.168.10.10:8080/videos`
+- (depuis le WiFi télécommande, remplacer par `10.0.0.1`)
+
+## Retransmission 4G
+
+Quand « Serveur externe » est activé dans les **Réglages** (lien RTMP distant),
+le Beelink retransmet automatiquement le flux du drone vers ce lien **via le
+routeur 4G** (ffmpeg en sortie, pas de redirection de port nécessaire).
+L'état de la retransmission et de la 4G est visible dans le panneau **Infos**.
 
 ## Monitoring Batterie
 
@@ -212,11 +238,19 @@ L'estimation est initialisée au démarrage du système et décroît avec le tem
 ### Simple (recommandé)
 
 ```bash
+# Via le réseau du routeur 4G (Mac sur corelink-screen):
+ssh drone@192.168.10.10
+# ou en proximité, sur le WiFi corelink-001:
 ssh drone@10.0.0.1
+
 cd /opt/drone
 git pull origin main
 sudo systemctl restart drone-ui
 ```
+
+> ⚠️ Après une mise à jour, redémarrer aussi `drone-api` (retransmission 4G)
+> et `drone-wifi-ap` (bande WiFi) si les scripts/config ont changé:
+> `sudo systemctl restart drone-api drone-wifi-ap`
 
 ### Complète (après mise à jour OS)
 
@@ -238,6 +272,7 @@ sudo systemctl restart drone-ui
 | SBC | Beelink S12 Mini | Intel N100, 8GB RAM, 256GB SSD |
 | Batterie | SmallRig VB99 Mini | 99Wh, USB-C PD 100W |
 | Écran | HDMI 1080p | Tactile capacitif 10 points |
+| Routeur 4G | Cudy IR02 | LTE Cat4, WiFi écrans `corelink-screen`, LAN 192.168.10.x |
 | Drone | DJI Matrice 4TD / M30T | RTMP via DJI Pilot 2 |
 
 ### Logiciel
@@ -267,9 +302,13 @@ sudo systemctl restart drone-ui
 drone/
 ├── README.md                 # Ce fichier
 ├── GUIDE_INSTALLATION.md     # Guide complet d'installation
+├── GUIDE_SSH.md              # Accès SSH (routeur 4G, câble direct, WiFi)
+├── GUIDE_ROUTER.md           # Raccordement routeur 4G Cudy IR02
 ├── package.json              # Dépendances Node.js
 ├── config/
 │   ├── users.json.example    # Template utilisateurs
+│   ├── hostapd.conf          # AP WiFi télécommande (5GHz si supporté)
+│   ├── mediamtx.yml          # Serveur RTMP/HLS/WebRTC
 │   └── config.json.example   # Template configuration
 ├── src/
 │   ├── server/
@@ -279,28 +318,35 @@ drone/
 │   │   │   └── config.js     # API configuration
 │   │   └── services/
 │   │       ├── battery.js    # Lecture batterie USB
-│   │       ├── recorder.js    # Gestion FFmpeg
-│   │       └── cleanup.js     # Nettoyage videos +7j
+│   │       ├── proxy.js      # Proxy HLS/WebRTC
+│   │       ├── rtmp-push.js  # Retransmission 4G (serveur externe)
+│   │       ├── recorder.js   # Gestion FFmpeg
+│   │       └── cleanup.js    # Nettoyage videos +7j
 │   └── client/               # Interface React
 │       ├── src/
 │       ├── public/
 │       └── index.html
 ├── systemd/
 │   ├── drone-ui.service      # Service interface
-│   └── drone-api.service     # Service API
+│   ├── drone-api.service     # Service API
+│   └── drone-wifi-ap.service # Service point d'accès WiFi
 └── scripts/
     ├── install.sh            # Script installation
-    ├── cleanup-videos.sh    # Cron nettoyage
+    ├── setup-wifi-ap.sh      # AP WiFi télécommande (5GHz auto)
+    ├── configure-network.sh  # Netplan Ethernet routeur + WiFi AP
+    ├── network-diagnostic.sh # Diagnostic réseau (routeur/4G inclus)
+    ├── cleanup-videos.sh     # Cron nettoyage
     ├── healthcheck-mediamtx.sh # Healthcheck MediaMTX
     └── start-kiosk.sh        # Lancement Firefox kiosk
 ```
 
 ## Sécurité
 
-- Le WiFi est un réseau isolé (pas d'accès internet)
+- Le WiFi télécommande (`corelink-001`) est un réseau isolé (pas d'accès internet)
+- Le WiFi écrans (`corelink-screen`) donne accès à Internet via la 4G
+- La retransmission RTMP est une connexion **sortante** uniquement (pas de port exposé sur Internet)
 - Les vidéos sont stockées localement uniquement
-- Aucune donnée n'est transmise à des serveurs tiers
-- Configuration des IPs externes par l'administrateur uniquement
+- Configuration des liens RTMP externes par l'administrateur uniquement
 
 ## Licence
 

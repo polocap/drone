@@ -7,6 +7,7 @@ import batteryRouter from './routes/battery.js'
 import systemRouter from './routes/system.js'
 import dronesRouter from './routes/drones.js'
 import { setupProxy } from './services/proxy.js'
+import { startPushManager } from './services/rtmp-push.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -37,6 +38,9 @@ app.use('/api/drones', dronesRouter)
 app.use('/api/pilots', configRouter)
 
 setupProxy(app)
+
+// Retransmission of the live stream to the external RTMP server (4G route)
+startPushManager()
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })

@@ -1,23 +1,51 @@
 # Guide Connexion SSH - DRONE OPS
 
-## ⚠️ Deux méthodes d'accès DIFFÉRENTES
+## ⚠️ Trois méthodes d'accès DIFFÉRENTES
 
 | Méthode | Interface | IP | Usage |
 |---------|-----------|-----|-------|
-| **Admin** | Ethernet (câble) | DHCP (192.168.x.x) | Configuration serveur |
-| **Opérateur** | WiFi | 10.0.0.1 | Visionnage flux vidéo |
+| **Admin (routeur 4G)** | WiFi `corelink-screen` ou LAN du Cudy | `192.168.10.10` | Configuration serveur — **méthode principale** |
+| **Admin (câble direct)** | Ethernet Mac ↔ Beelink | 192.168.100.1 | Sans routeur (dépannage) |
+| **Opérateur** | WiFi `corelink-001` | 10.0.0.1 | Visionnage flux + SSH de proximité |
+
+> **Important**: depuis l'arrivée du routeur 4G, le port Ethernet du Beelink
+> est occupé par le Cudy IR02. Le Beelink ne peut plus rejoindre le WiFi de
+> votre Mac ou d'une box : sa carte WiFi sert de point d'accès pour la
+> télécommande (`corelink-001`). L'accès admin passe donc par le réseau du
+> routeur. Voir `GUIDE_ROUTER.md` pour le raccordement.
 
 ---
 
-## 🔧 ACCÈS ADMIN - Ethernet (Vous)
+## 🔧 ACCÈS ADMIN - Via le routeur 4G Cudy (méthode principale)
 
-**Pour vous connecter en SSH pour administrer le serveur:**
+Le Beelink est raccordé au routeur par câble Ethernet et obtient l'IP
+`192.168.10.10` (réservation DHCP, voir GUIDE_ROUTER.md).
+
+#### Étape 1: Connecter le Mac au réseau du routeur
+
+- WiFi: rejoindre `corelink-screen` (mot de passe `4vR9!mQ2xK8sT7wP5nZ3`)
+- ou câble Ethernet du Mac sur un port LAN libre du Cudy
+
+#### Étape 2: SSH
+
+```bash
+ssh drone@192.168.10.10
+# Mot de passe: drone2026
+```
+
+Si la réservation DHCP n'a pas été faite, trouver l'IP du Beelink:
+
+```bash
+# Dans l'admin du routeur (http://192.168.10.1) : liste des clients DHCP
+# Ou par mDNS (avahi installé sur le Beelink) — adapter au hostname réel:
+ssh drone@beelink.local        # 'hostname' sur le Beelink donne le nom exact
+```
+
+> Le Beelink répond aussi en HTTP sur ce réseau: `http://192.168.10.10:8080`
 
 ---
 
-### Méthode A: Connexion directe Mac ↔ Beelink (sans routeur)
-
-C'est la méthode qui fonctionne quand vous connectez directement le Beelink à votre Mac avec un câble Ethernet (pas de routeur/switch).
+## 🔧 ACCÈS ADMIN - Câble direct Mac ↔ Beelink (sans routeur)
 
 #### Étape 1: Vérifier l'interface sur le Beelink
 
@@ -84,7 +112,7 @@ ssh drone@192.168.100.1
 
 ---
 
-### Méthode B: Via routeur/switch (DHCP)
+### Méthode B: Via un routeur/switch générique (autre que le Cudy)
 
 Si le Beelink est connecté à un routeur:
 
@@ -264,18 +292,19 @@ sudo chmod 600 /home/drone/.ssh/authorized_keys
 
 ---
 
-## 📡 ACCÈS OPÉRATEUR - WiFi (Télécommande)
+## 📡 ACCÈS OPÉRATEUR - WiFi télécommande (proximité)
 
-**Pour les autres utilisateurs qui veulent voir le flux:**
+**Pour une vérification rapide à côté du serveur** (ce WiFi est réservé à la
+télécommande en opération, ne pas l'utiliser pendant un vol):
 
 ### Depuis un PC/Mac connecté au WiFi
-1. Connectez-vous au WiFi: `DRONE-OPS-001`
-2. Mot de passe: `drone2024`
+1. Connectez-vous au WiFi: `corelink-001`
+2. Mot de passe: `9fK7qP2xL8vT4wR!3kD8mN5`
 3. Accédez à: http://10.0.0.1:8080
 
 ### En SSH (si besoin)
 ```bash
-# Une fois connecté au WiFi DRONE-OPS-001
+# Une fois connecté au WiFi corelink-001
 ssh drone@10.0.0.1
 ```
 
@@ -366,12 +395,14 @@ ls -lh /var/lib/drone/videos/
 
 | Service | IP | Port | Accès |
 |---------|-----|------|-------|
-| SSH (admin - direct) | 192.168.100.1 | 22 | Ethernet direct Mac ↔ Beelink |
-| SSH (admin - routeur) | 192.168.x.x | 22 | Ethernet via routeur |
-| SSH (WiFi) | 10.0.0.1 | 22 | WiFi |
-| Interface web | 10.0.0.1 | 8080 | WiFi |
-| RTMP | 10.0.0.1 | 1935 | WiFi |
-| HLS | 10.0.0.1 | 8888 | WiFi |
+| SSH (admin - routeur 4G) | 192.168.10.10 | 22 | WiFi `corelink-screen` ou LAN Cudy |
+| SSH (admin - câble direct) | 192.168.100.1 | 22 | Ethernet direct Mac ↔ Beelink |
+| SSH (proximité) | 10.0.0.1 | 22 | WiFi `corelink-001` |
+| Interface web (écrans) | 192.168.10.10 | 8080 | WiFi `corelink-screen` |
+| Interface web (proximité) | 10.0.0.1 | 8080 | WiFi `corelink-001` |
+| RTMP (télécommande) | 10.0.0.1 | 1935 | WiFi `corelink-001` |
+| HLS | 10.0.0.1 ou 192.168.10.10 | 8888 | selon réseau |
+| Routeur (admin Cudy) | 192.168.10.1 | 80 | WiFi `corelink-screen` |
 
 ---
 
@@ -385,7 +416,9 @@ sudo -i
 ssh root@<ip>
 ```
 
-**⚠️ Note:** La connexion Ethernet (192.168.x.x) est réservée à l'administrateur. Le WiFi 10.0.0.1 est pour les opérateurs et la télécommande.
+**⚠️ Note:** Le réseau du routeur 4G (192.168.10.x) est l'accès admin normal.
+Le câble direct (192.168.100.1) sert au dépannage sans routeur. Le WiFi
+10.0.0.1 est réservé à la télécommande et aux vérifications de proximité.
 
 ---
 

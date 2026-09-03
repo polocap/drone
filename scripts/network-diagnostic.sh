@@ -48,6 +48,32 @@ echo "-----------------"
 ip route | grep default || echo "  No default route"
 
 echo ""
+echo "🛰️  Routeur 4G (Cudy IR02):"
+echo "---------------------------"
+GW=$(ip route | awk '/^default/ {print $3; exit}')
+if [ -n "$GW" ]; then
+    echo "  Passerelle: $GW"
+    if ping -c1 -W1 "$GW" &>/dev/null; then
+        echo "  Routeur:    ✓ joignable"
+    else
+        echo "  Routeur:    ✗ injoignable (câble Ethernet ? routeur allumé ?)"
+    fi
+    if ping -c1 -W2 1.1.1.1 &>/dev/null; then
+        echo "  Internet:   ✓ OK (4G active)"
+    else
+        echo "  Internet:   ✗ pas d'accès Internet (SIM/data 4G ?)"
+    fi
+else
+    echo "  Pas de passerelle — le Beelink n'est pas raccordé au routeur"
+fi
+
+echo ""
+echo "📶 WiFi écrans (routeur):"
+echo "-------------------------"
+echo "  SSID attendu: corelink-screen"
+echo "  Les écrans/tablettes s'y connectent puis ouvrent http://$(ip -br addr show 2>/dev/null | grep -v 'lo\|wlp' | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1):8080"
+
+echo ""
 echo "🔌 SSH Service:"
 echo "---------------"
 if systemctl is-active ssh &>/dev/null; then

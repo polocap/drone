@@ -2,6 +2,7 @@ import express from 'express'
 import fs from 'fs/promises'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { applySettingsNow } from '../services/rtmp-push.js'
 
 const router = express.Router()
 const __filename = fileURLToPath(import.meta.url)
@@ -19,7 +20,12 @@ const DEFAULT_CONFIG = {
   beelink_ip: '10.0.0.1',
   rtmp_port: 1935,
   api_port: 8080,
-  rtmp_url: 'rtmp://10.0.0.1:1935/live'
+  rtmp_url: 'rtmp://10.0.0.1:1935/live',
+  // Routeur 4G (Cudy IR02) — réseau WiFi utilisé par les écrans externes
+  router_wifi_ssid: 'corelink-screen',
+  router_wifi_password: '4vR9!mQ2xK8sT7wP5nZ3',
+  router_ip: '192.168.10.1',
+  router_lan_ip: '192.168.10.10'
 }
 
 const DEFAULT_SETTINGS = {
@@ -144,6 +150,8 @@ router.post('/settings', async (req, res) => {
     if (typeof external_rtmp_enabled === 'boolean') settings.external_rtmp_enabled = external_rtmp_enabled
     if (typeof external_rtmp_url === 'string') settings.external_rtmp_url = external_rtmp_url.trim()
     await fs.writeFile(SETTINGS_PATH, JSON.stringify(settings, null, 2))
+    // Apply the change to the external RTMP push immediately (not on next poll)
+    applySettingsNow()
     res.json(settings)
   } catch (e) {
     res.status(500).json({ error: e.message })

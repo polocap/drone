@@ -77,10 +77,11 @@ configure_netplan() {
         cp -r /etc/netplan /etc/netplan.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
     fi
 
-    # Configuration for Ethernet (DHCP - for admin SSH access)
+    # Configuration for Ethernet (DHCP - plugged into the 4G router Cudy IR02)
     if [ -n "$ETHERNET_IFACE" ]; then
         cat > /etc/netplan/00-admin-ethernet.yaml <<EOF
-# Admin Ethernet - SSH access for administrator
+# Ethernet - raccordé au routeur 4G Cudy IR02 (LAN 192.168.10.x)
+# IP obtenue par DHCP (réserver 192.168.10.10 dans le routeur conseillé)
 network:
   version: 2
   ethernets:
@@ -91,13 +92,13 @@ network:
 EOF
         echo "✓ Ethernet config: /etc/netplan/00-admin-ethernet.yaml"
         echo "  Interface: $ETHERNET_IFACE"
-        echo "  Mode: DHCP (automatic IP from your router)"
+        echo "  Mode: DHCP (IP automatique depuis le routeur 4G)"
     fi
 
     # Configuration for WiFi (managed by NetworkManager for AP mode)
     if [ -n "$WIFI_IFACE" ]; then
         cat > /etc/netplan/01-wifi-ap.yaml <<EOF
-# WiFi Access Point - Managed by NetworkManager
+# WiFi Access Point télécommande - Managed by NetworkManager
 network:
   version: 2
   renderer: NetworkManager
@@ -109,14 +110,14 @@ network:
       addresses:
         - 10.0.0.1/24
       access-points:
-        "DRONE-OPS-001":
+        "corelink-001":
           mode: ap
-          password: "drone2024"
+          password: "9fK7qP2xL8vT4wR!3kD8mN5"
 EOF
         echo "✓ WiFi config: /etc/netplan/01-wifi-ap.yaml"
         echo "  Interface: $WIFI_IFACE"
         echo "  IP: 10.0.0.1"
-        echo "  SSID: DRONE-OPS-001"
+        echo "  SSID: corelink-001 (réservé télécommande, 5GHz si supporté)"
     fi
 
     # Remove old conflicting configs
@@ -255,15 +256,16 @@ show_status() {
     if [ -n "$ETHERNET_IFACE" ]; then
         ETHERNET_IP=$(ip -br addr show "$ETHERNET_IFACE" 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -1)
         if [ -n "$ETHERNET_IP" ]; then
-            echo "  Ethernet: ssh drone@$ETHERNET_IP"
+            echo "  Routeur 4G: ssh drone@$ETHERNET_IP"
+            echo "              (depuis un appareil connecté au WiFi du routeur)"
         else
-            echo "  Ethernet: Waiting for DHCP..."
-            echo "            Check with: ip addr show $ETHERNET_IFACE"
+            echo "  Routeur 4G: Waiting for DHCP..."
+            echo "              Check with: ip addr show $ETHERNET_IFACE"
         fi
     fi
 
     if [ -n "$WIFI_IFACE" ]; then
-        echo "  WiFi AP:  Devices connect to 'DRONE-OPS-001'"
+        echo "  WiFi AP:  Devices connect to 'corelink-001'"
         echo "            Then: ssh drone@10.0.0.1"
     fi
 

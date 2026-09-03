@@ -186,8 +186,8 @@ sudo reboot
 - Sélectionner un pilote et vérifier la transition
 
 ### 3. Vérifier le WiFi
-- Depuis un appareil: chercher le réseau "DRONE-OPS-001"
-- Se connecter avec le mot de passe "drone2024"
+- Depuis un appareil: chercher le réseau "corelink-001"
+- Se connecter avec le mot de passe "9fK7qP2xL8vT4wR!3kD8mN5"
 - Vérifier la connectivité: `ping 10.0.0.1`
 
 ### 4. Health check complet
@@ -245,7 +245,7 @@ sudo ip link set enp1s0 up
 3. **GDM3** : Auto-login "drone" (pas de mot de passe)
 4. **Openbox** : Lance Firefox en mode kiosk
 5. **App** : Écran PIN (code: 123456) → Sélection pilote → Live view
-6. **WiFi** : AP "DRONE-OPS-001" disponible dès le boot
+6. **WiFi** : AP "corelink-001" disponible dès le boot
 
 ---
 

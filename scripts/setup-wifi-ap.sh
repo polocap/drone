@@ -93,6 +93,32 @@ check_ap_support() {
     fi
 }
 
+# Detect 5GHz band + AP mode support (for the drone feed: higher throughput,
+# less interference than 2.4GHz). Falls back to 2.4GHz when unsupported.
+SUPPORTS_5GHZ=0
+
+detect_5ghz_support() {
+    SUPPORTS_5GHZ=0
+
+    if ! command -v iw &>/dev/null; then
+        log_warn "'iw' non disponible, bande 2.4GHz utilisée"
+        return
+    fi
+
+    # Any 5GHz frequency present in the band list (e.g. "5180.0 MHz [36]")
+    if iw list 2>/dev/null | grep -qE '^\s*\*\s*5[0-9]{3}\.[0-9] MHz'; then
+        # AP mode must be listed in supported interface modes
+        if iw list 2>/dev/null | grep -A 10 'Supported interface modes' | grep -q '\* AP'; then
+            SUPPORTS_5GHZ=1
+            log_success "Bande 5GHz supportée — le réseau télécommande passera en 5GHz"
+        else
+            log_warn "Mode AP non listé pour ce driver, bande 2.4GHz utilisée"
+        fi
+    else
+        log_info "Bande 5GHz non disponible — bande 2.4GHz utilisée"
+    fi
+}
+
 # Stop conflicting services
 stop_conflicting_services() {
     log_info "Arrêt des services conflictuels..."
@@ -140,26 +166,34 @@ configure_interface() {
 }
 
 # Create hostapd configuration
+# $1 = band: "a" (5GHz) or "g" (2.4GHz)
 create_hostapd_config() {
-    log_info "Création de la configuration hostapd..."
+    local band="${1:-g}"
+    log_info "Création de la configuration hostapd (bande ${band})..."
 
     mkdir -p /etc/hostapd
 
-    cat > /etc/hostapd/hostapd.conf <<EOF
-# DRONE OPS WiFi AP Configuration
+    if [ "$band" = "a" ]; then
+        cat > /etc/hostapd/hostapd.conf <<EOF
+# DRONE OPS WiFi AP Configuration (5GHz — flux télécommande)
 interface=$WIFI_IFACE
 driver=nl80211
 
 # Basic settings
 ssid=$SSID
-hw_mode=g
-channel=7
+country_code=FR
+ieee80211d=1
+hw_mode=a
+channel=36
 wmm_enabled=1
 
-# 802.11n support
+# 802.11n/ac (VHT80 on channel 36)
 ieee80211n=1
 ieee80211ac=1
-ieee80211ax=1
+ht_capab=[HT40+][SHORT-GI-20][SHORT-GI-40]
+vht_capab=[SHORT-GI-80]
+vht_oper_chwidth=1
+vht_oper_centr_freq_seg0_idx=42
 
 # Security
 wpa=2
@@ -177,8 +211,43 @@ logger_syslog_level=2
 # Performance
 beacon_int=100
 dtim_period=2
-max_num_sta=32
+max_num_sta=8
 EOF
+    else
+        cat > /etc/hostapd/hostapd.conf <<EOF
+# DRONE OPS WiFi AP Configuration (2.4GHz — flux télécommande)
+interface=$WIFI_IFACE
+driver=nl80211
+
+# Basic settings
+ssid=$SSID
+hw_mode=g
+channel=6
+wmm_enabled=1
+
+# 802.11n
+ieee80211n=1
+ht_capab=[HT40+][SHORT-GI-20][DSSS_CCK-40]
+
+# Security
+wpa=2
+wpa_passphrase=$PASSWORD
+wpa_key_mgmt=WPA-PSK
+rsn_pairwise=CCMP
+
+# Broadcast settings
+ignore_broadcast_ssid=0
+
+# Logging
+logger_syslog=-1
+logger_syslog_level=2
+
+# Performance
+beacon_int=100
+dtim_period=2
+max_num_sta=8
+EOF
+    fi
 
     log_success "Configuration hostapd créée: /etc/hostapd/hostapd.conf"
 }
@@ -226,13 +295,38 @@ EOF
 start_services() {
     log_info "Démarrage des services..."
 
-    # Start hostapd
+    # Start hostapd — 5GHz preferred for the remote feed, 2.4GHz fallback
     if command -v hostapd &>/dev/null; then
-        hostapd -B /etc/hostapd/hostapd.conf || {
+        local ap_started=0
+        local bands=()
+        if [ "$SUPPORTS_5GHZ" = "1" ]; then
+            bands=(a g)
+        else
+            bands=(g)
+        fi
+
+        for band in "${bands[@]}"; do
+            create_hostapd_config "$band"
+            hostapd -B /etc/hostapd/hostapd.conf 2>/dev/null || true
+            sleep 2
+            if pgrep -x hostapd &>/dev/null && iw dev "$WIFI_IFACE" info 2>/dev/null | grep -q "type AP"; then
+                if [ "$band" = "a" ]; then
+                    log_success "hostapd démarré (5GHz, canal 36)"
+                else
+                    log_success "hostapd démarré (2.4GHz)"
+                fi
+                ap_started=1
+                break
+            fi
+            log_warn "hostapd n'a pas démarré en bande ${band}, tentative suivante..."
+            pkill -x hostapd 2>/dev/null || true
+            sleep 1
+        done
+
+        if [ "$ap_started" != "1" ]; then
             log_error "Échec du démarrage de hostapd"
             exit 1
-        }
-        log_success "hostapd démarré"
+        fi
     else
         log_error "hostapd non installé"
         log_info "Installation: sudo apt-get install hostapd"
@@ -278,6 +372,20 @@ use_networkmanager_hotspot() {
         return 1
     }
 
+    # Prefer 5GHz for the remote feed when the card supports it
+    if [ "$SUPPORTS_5GHZ" = "1" ]; then
+        nmcli con modify "DRONE-OPS-AP" 802-11-wireless.band a 2>/dev/null || true
+        nmcli con modify "DRONE-OPS-AP" 802-11-wireless.channel 36 2>/dev/null || true
+        if nmcli con up "DRONE-OPS-AP" 2>/dev/null; then
+            log_success "Hotspot en 5GHz (canal 36)"
+        else
+            log_warn "5GHz refusé par le driver, retour en 2.4GHz"
+            nmcli con modify "DRONE-OPS-AP" 802-11-wireless.band bg 2>/dev/null || true
+            nmcli con modify "DRONE-OPS-AP" 802-11-wireless.channel 6 2>/dev/null || true
+            nmcli con up "DRONE-OPS-AP" 2>/dev/null || true
+        fi
+    fi
+
     # Configure static IP
     nmcli con modify "DRONE-OPS-AP" ipv4.addresses "$AP_IP/24" || true
     nmcli con modify "DRONE-OPS-AP" ipv4.method manual || true
@@ -308,14 +416,17 @@ verify_ap() {
     fi
 
     # Display status
+    local band_info="2.4GHz"
+    if [ "$SUPPORTS_5GHZ" = "1" ]; then band_info="5GHz (si accepté par le driver)"; fi
     log_info ""
     log_info "=================================="
-    log_info "  WiFi AP Status"
+    log_info "  WiFi AP Status (flux télécommande)"
     log_info "=================================="
-    log_info "  SSID:     $SSID"
-    log_info "  Password: $PASSWORD"
-    log_info "  IP:       $AP_IP"
+    log_info "  SSID:      $SSID"
+    log_info "  Password:  $PASSWORD"
+    log_info "  IP:        $AP_IP"
     log_info "  Interface: $WIFI_IFACE"
+    log_info "  Bande:     $band_info"
     log_info "=================================="
 }
 
@@ -343,6 +454,7 @@ main() {
     # Find interface
     find_wifi_interface
     check_ap_support
+    detect_5ghz_support
 
     # Stop conflicting services
     stop_conflicting_services
@@ -353,7 +465,6 @@ main() {
     else
         log_info "Utilisation de la méthode manuelle (hostapd + dnsmasq)"
         configure_interface
-        create_hostapd_config
         create_dnsmasq_config
         start_services
     fi
