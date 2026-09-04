@@ -31,7 +31,7 @@ const DEFAULT_CONFIG = {
 const DEFAULT_SETTINGS = {
   recording_enabled: true,
   external_rtmp_enabled: false,
-  external_rtmp_url: 'rtmp://example.com/live/key'
+  external_rtmp_url: 'rtmp://sitgard-ams.midgard-ai.com/LiveApp/884439'
 }
 
 const DEFAULT_STATE = {

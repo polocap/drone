@@ -23,25 +23,36 @@ Le Beelink est raccordé au routeur par câble Ethernet et obtient l'IP
 
 #### Étape 1: Connecter le Mac au réseau du routeur
 
-- WiFi: rejoindre `corelink-001-screen` (mot de passe `4vR9!mQ2xK8sT7wP5nZ3`)
-- ou câble Ethernet du Mac sur un port LAN libre du Cudy
+- **WiFi**: rejoindre `corelink-001-screen` (mot de passe `4vR9!mQ2xK8sT7wP5nZ3`)
+- **ou câble Ethernet** du Mac sur un port LAN libre du Cudy
+  (vérifié : le Mac garde Internet par son WiFi tant que « Wi-Fi » est avant
+  l'adaptateur USB-Ethernet dans Réglages réseau → Ordre des services)
 
 #### Étape 2: SSH
 
 ```bash
 ssh drone@192.168.10.10
 # Mot de passe: drone2026
+# ou avec la clé: ssh -i ~/.ssh/drone-beelink drone@192.168.10.10
 ```
 
-Si la réservation DHCP n'a pas été faite, trouver l'IP du Beelink:
+> **Fonctionne sans carte SIM** : le WiFi `corelink-001-screen` et le LAN du
+> routeur sont actifs même sans réseau 4G. Seule la sortie Internet manque.
+
+En cas de problème (réservation modifiée, IP inconnue):
 
 ```bash
-# Dans l'admin du routeur (http://192.168.10.1) : liste des clients DHCP
-# Ou par mDNS (avahi installé sur le Beelink) — adapter au hostname réel:
-ssh drone@beelink.local        # 'hostname' sur le Beelink donne le nom exact
+# Liste des clients DHCP dans l'admin du routeur: http://192.168.10.1
+#   (admin / Cudy!IR02-2026) — le Beelink apparaît en filaire
+# Ou par mDNS, une fois avahi installé sur le Beelink (voir ci-dessous):
+ssh drone@drone-ops.local
 ```
 
 > Le Beelink répond aussi en HTTP sur ce réseau: `http://192.168.10.10:8080`
+>
+> **Bonus confort** : quand le Beelink aura Internet (SIM insérée), installer
+> avahi pour le raccourci `drone-ops.local` :
+> `sudo apt install avahi-daemon`
 
 ---
 
@@ -402,7 +413,7 @@ ls -lh /var/lib/drone/videos/
 | Interface web (proximité) | 10.0.0.1 | 8080 | WiFi `corelink-001-drone` |
 | RTMP (télécommande) | 10.0.0.1 | 1935 | WiFi `corelink-001-drone` |
 | HLS | 10.0.0.1 ou 192.168.10.10 | 8888 | selon réseau |
-| Routeur (admin Cudy) | 192.168.10.1 | 80 | WiFi `corelink-001-screen` |
+| Routeur (admin Cudy) | 192.168.10.1 | 80 | WiFi `corelink-001-screen` — `admin` / `Cudy!IR02-2026` |
 
 ---
 
