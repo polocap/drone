@@ -25,10 +25,22 @@ function defaultRoute() {
   return null
 }
 
-function lanIp(iface) {
+function lanIp(iface, gateway) {
   try {
     const addrs = os.networkInterfaces()[iface] || []
-    return (addrs.find((a) => !a.internal && a.family === 'IPv4') || {}).address || null
+    const ipv4 = addrs.filter((a) => !a.internal && a.family === 'IPv4')
+    if (!ipv4.length) return null
+    if (gateway) {
+      // Prefer the address in the same subnet as the gateway (the router LAN)
+      const inSubnet = ipv4.find((a) => {
+        const mask = a.netmask
+          .split('.')
+          .map((x, i) => (parseInt(x) & parseInt(gateway.split('.')[i])) === (parseInt(a.address.split('.')[i]) & parseInt(gateway.split('.')[i])))
+        return mask.every(Boolean)
+      })
+      if (inSubnet) return inSubnet.address
+    }
+    return ipv4[0].address
   } catch {
     return null
   }
@@ -102,7 +114,7 @@ router.get('/status', async (req, res) => {
     internet: internetUp,
     lan: {
       iface: route?.iface || null,
-      ip: route ? lanIp(route.iface) : null,
+      ip: route ? lanIp(route.iface, gateway) : null,
       gateway,
     },
     external_rtmp: {

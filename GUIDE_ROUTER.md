@@ -69,31 +69,25 @@ comportement par défaut.
 
 ---
 
-## 2. Configuration du Cudy IR02 (une seule fois)
+## 2. Configuration du Cudy IR02 — ✅ DÉJÀ FAITE (04/09/2026)
 
-1. Depuis votre Mac connecté au WiFi du routeur (SSID/mot de passe par défaut
-   **imprimés sur l'étiquette** du routeur), ouvrir `http://192.168.10.1`
-   (ou `http://cudy.net`).
-2. Mot de passe admin par défaut : voir l'étiquette (souvent `admin`).
-   **Changer le mot de passe admin** à la première connexion.
-3. Vérifier la **4G** : la page d'accueil doit afficher le signal et une IP
-   WAN. Si la SIM exige un APN manuel : *Advanced → 4G LTE → APN* (renseigner
-   l'APN de l'opérateur).
-4. **Renommer le WiFi routeur** (Wireless / WLAN) :
-   - WiFi Name (SSID) : `corelink-001-screen`
-   - WiFi Password : `4vR9!mQ2xK8sT7wP5nZ3`
-   - Bande 2.4GHz et 5GHz : même nom possible (band steering) ; les écrans
-     se connecteront tout seuls.
-5. **Réserver l'IP du Beelink** (DHCP reservation / "Address Reservation") :
-   - MAC = celle du port Ethernet du Beelink (visible dans la liste des
-     clients DHCP du routeur, nom "beelink" ou similaire)
-   - IP fixée à `192.168.10.10`
-   - Ainsi l'URL `http://192.168.10.10:8080` et `ssh drone@192.168.10.10`
-     restent stables.
-6. Vérifier que l'**isolation client est désactivée** ("AP Isolation",
-   "Client Isolation" ou "Isolate") si l'option existe : les écrans du WiFi
-   routeur doivent pouvoir joindre le Beelink.
-7. Redémarrer le routeur.
+L'assistant de première configuration a été complété :
+
+| Réglage | Valeur |
+|---------|--------|
+| **Mot de passe admin** | `Cudy!IR02-2026` (admin : `http://192.168.10.1`) |
+| **WiFi 2.4G SSID** | `corelink-001-screen` |
+| **WiFi mot de passe** | `4vR9!mQ2xK8sT7wP5nZ3` |
+| **Réservation DHCP** | Beelink (MAC `78:55:36:0B:94:6B`) → `192.168.10.10` |
+| **Mode** | Cellular Router (par défaut) |
+
+**Reste à faire quand vous aurez une SIM** :
+1. Insérer la carte SIM (nano, code PIN désactivé) puis redémarrer le routeur.
+2. Si la SIM exige un APN manuel : *Advanced Settings → Network → … → APN*
+   (renseigner l'APN de l'opérateur). Sinon le profil "Auto" suffit.
+3. La page d'accueil doit afficher le signal 4G et une IP WAN.
+4. Sur l'écran du Beelink, le panneau **Infos** doit alors passer
+   « 4G : Disponible » (vert).
 
 > Le serveur RTMP externe est joignable en **sortie** (push vers Internet) :
 > le NAT/CGNAT de la 4G ne pose aucun problème, aucune redirection de port
