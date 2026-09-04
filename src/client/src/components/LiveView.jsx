@@ -91,14 +91,8 @@ function SettingsModal({ open, onClose, config }) {
 
           {externalEnabled && (
             <div className="sheet-field">
-              <span className="sheet-field-label">Lien RTMP distant</span>
-              <input
-                className="sheet-input"
-                value={rtmpUrl}
-                onChange={e=>setRtmpUrl(e.target.value)}
-                placeholder="rtmp://exemple.com/live/cle"
-                spellCheck={false}
-              />
+              <span className="sheet-field-label">Lien RTMP distant (fixe)</span>
+              <div className="sheet-input" style={{ opacity: 0.75, userSelect: 'all' }}>{rtmpUrl}</div>
             </div>
           )}
         </div>
@@ -178,17 +172,17 @@ function InfoModal({ open, onClose, config, isConnected }) {
               </span>
             </div>
             <div className="status-row">
-              <span className="status-row-label">Flux drone</span>
-              <span className="status-row-value">
-                <StatusDot state={isConnected ? 'green' : 'yellow'} />
-                {isConnected ? 'Connecté' : 'En attente'}
-              </span>
-            </div>
-            <div className="status-row">
               <span className="status-row-label">4G</span>
               <span className="status-row-value">
                 <StatusDot state={routerState} />
                 {routerLabel}
+              </span>
+            </div>
+            <div className="status-row">
+              <span className="status-row-label">Flux drone</span>
+              <span className="status-row-value">
+                <StatusDot state={isConnected ? 'green' : 'yellow'} />
+                {isConnected ? 'Connecté' : 'En attente'}
               </span>
             </div>
             <div className="status-row">
@@ -202,7 +196,22 @@ function InfoModal({ open, onClose, config, isConnected }) {
         </div>
 
         <div className="sheet-section">
-          <span className="sheet-section-label">WiFi écrans — routeur 4G</span>
+          <span className="sheet-section-label">WiFi - Drone</span>
+          <div className="info-card">
+            <div className="info-card-row">
+              <span className="info-card-k">Réseau</span>
+              <span className="info-card-v mono">{config?.wifi_ssid || 'corelink-001-drone'}</span>
+            </div>
+            <div className="info-card-row">
+              <span className="info-card-k">Mot de passe</span>
+              <span className="info-card-v mono">{config?.wifi_password || '9fK7qP2xL8vT4wR!3kD8mN5'}</span>
+            </div>
+          </div>
+          <p className="info-hint">Réservée à la télécommande DJI pour publier le flux. Le détail de connexion est aussi accessible via le bouton Drone.</p>
+        </div>
+
+        <div className="sheet-section">
+          <span className="sheet-section-label">WiFi - Screen</span>
           <div className="info-card">
             <div className="info-card-row">
               <span className="info-card-k">Réseau</span>

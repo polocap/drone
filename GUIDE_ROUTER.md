@@ -82,12 +82,31 @@ L'assistant de première configuration a été complété :
 | **Mode** | Cellular Router (par défaut) |
 
 **Reste à faire quand vous aurez une SIM** :
-1. Insérer la carte SIM (nano, code PIN désactivé) puis redémarrer le routeur.
+1. Insérer la carte SIM (nano) puis redémarrer le routeur.
 2. Si la SIM exige un APN manuel : *Advanced Settings → Network → … → APN*
    (renseigner l'APN de l'opérateur). Sinon le profil "Auto" suffit.
 3. La page d'accueil doit afficher le signal 4G et une IP WAN.
 4. Sur l'écran du Beelink, le panneau **Infos** doit alors passer
    « 4G : Disponible » (vert).
+
+### Code PIN de la SIM : comment ça se passe
+
+- **Cas le plus courant (SIM data sans PIN)** : rien à faire. Le routeur
+  détecte la SIM, se connecte au réseau et partage Internet tout seul. Le
+  panneau **Infos** du Beelink passe « 4G : Disponible » (vert) en quelques
+  dizaines de secondes — aucune configuration côté Beelink.
+- **SIM avec code PIN activé** : au démarrage, le routeur bloque la 4G et
+  demande le code. Sur l'interface d'admin (`http://192.168.10.1`,
+  `admin` / `Cudy!IR02-2026`), une invite « SIM PIN / Enter PIN » apparaît :
+  saisir le code PIN **une seule fois** — le routeur le mémorise et
+  déverrouille la SIM automatiquement à chaque démarrage suivant. En cas de
+  saisie erronée répétée, la SIM se bloque : utiliser alors le code PUK.
+- **Recommandation** : retirer le PIN de la SIM en l'insérant dans un
+  téléphone (Paramètres → Sécurité → Verrouillage SIM → désactiver), cela
+  évite toute manipulation sur le terrain.
+- Tant que la SIM n'est pas déverrouillée (absente, PIN demandé, pas de
+  réseau), le panneau **Infos** reste sur « 4G : Routeur OK — pas
+  d'Internet » (jaune) : le Beelink ne voit que le LAN du routeur.
 
 > Le serveur RTMP externe est joignable en **sortie** (push vers Internet) :
 > le NAT/CGNAT de la 4G ne pose aucun problème, aucune redirection de port
