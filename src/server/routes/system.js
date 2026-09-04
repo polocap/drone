@@ -67,6 +67,28 @@ async function probeFirst(host, ports) {
   return false
 }
 
+// CPU temperature from the thermal zones (N100: x86_pkg_temp is the
+// package sensor; fallback to the hottest zone available)
+function readCpuTemp() {
+  try {
+    const base = '/sys/class/thermal'
+    const zones = fsSync.readdirSync(base).filter((d) => d.startsWith('thermal_zone'))
+    let best = null
+    for (const zone of zones) {
+      try {
+        const type = fsSync.readFileSync(`${base}/${zone}/type`, 'utf8').trim()
+        const temp = parseInt(fsSync.readFileSync(`${base}/${zone}/temp`, 'utf8').trim(), 10) / 1000
+        if (!Number.isFinite(temp)) continue
+        const prio = /x86_pkg_temp/i.test(type) ? 2 : /coretemp|cpu/i.test(type) ? 1 : 0
+        if (!best || prio > best.prio) best = { prio, temp, type }
+      } catch {}
+    }
+    return best ? Math.round(best.temp * 10) / 10 : null
+  } catch {
+    return null
+  }
+}
+
 function checkLocalHls() {
   return new Promise((resolve) => {
     const r = http.get('http://127.0.0.1:8888/live/index.m3u8', { timeout: 1500 }, (pr) => {
@@ -106,6 +128,10 @@ router.get('/status', async (req, res) => {
   const pushRuntime = getPushStatus()
   const pushSettings = await loadSettings()
 
+  // CPU temperature (°C) — beelink in a closed case: warn early
+  const cpuTemp = readCpuTemp()
+  const tempState = cpuTemp == null ? 'unknown' : cpuTemp >= 85 ? 'hot' : cpuTemp >= 75 ? 'warm' : 'ok'
+
   res.json({
     wifi,
     rtmp: rtmpStatus ? (rtmpDegraded ? 'degraded' : true) : false,
@@ -117,6 +143,7 @@ router.get('/status', async (req, res) => {
       ip: route ? lanIp(route.iface, gateway) : null,
       gateway,
     },
+    temp: { cpu: cpuTemp, state: tempState },
     external_rtmp: {
       enabled: pushSettings.enabled,
       url: pushSettings.url,

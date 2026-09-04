@@ -63,6 +63,17 @@ function ViewerInfoModal({ open, onClose }) {
   const fourGLabel = status
     ? status.internet ? 'Disponible' : status.router ? 'Routeur OK — pas d\'Internet' : 'Non disponible'
     : 'Vérification…'
+  const tempC = status?.temp?.cpu
+  const tempState = status?.temp?.state || 'unknown'
+  const tempDot = tempState === 'ok' ? 'green' : tempState === 'warm' ? 'yellow' : tempState === 'hot' ? 'red' : 'yellow'
+  const tempText = tempC == null
+    ? '—'
+    : tempState === 'hot'
+      ? `${tempC} °C — surchauffe !`
+      : tempState === 'warm'
+        ? `${tempC} °C — chaude`
+        : `${tempC} °C`
+
   const push = status?.external_rtmp
   const pushLabel = !push ? 'Vérification…'
     : !push.enabled ? 'Désactivée'
@@ -113,6 +124,13 @@ function ViewerInfoModal({ open, onClose }) {
               <span className="status-row-value">
                 <StatusDot state={fourGState} />
                 {fourGLabel}
+              </span>
+            </div>
+            <div className="status-row">
+              <span className="status-row-label">Température</span>
+              <span className="status-row-value">
+                <StatusDot state={tempDot} />
+                {tempText}
               </span>
             </div>
             <div className="status-row">

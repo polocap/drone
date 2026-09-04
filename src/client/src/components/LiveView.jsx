@@ -153,6 +153,17 @@ function InfoModal({ open, onClose, config, isConnected }) {
         ? 'Active'
         : push.last_error ? 'Erreur' : 'En attente'
 
+  const tempC = status?.temp?.cpu
+  const tempState = status?.temp?.state || 'unknown'
+  const tempDot = tempState === 'ok' ? 'green' : tempState === 'warm' ? 'yellow' : tempState === 'hot' ? 'red' : 'yellow'
+  const tempText = tempC == null
+    ? '—'
+    : tempState === 'hot'
+      ? `${tempC} °C — surchauffe !`
+      : tempState === 'warm'
+        ? `${tempC} °C — chaude`
+        : `${tempC} °C`
+
   const screenIp = status?.lan?.ip || config?.router_lan_ip || '192.168.10.10'
 
   if (!open) return null
@@ -187,6 +198,13 @@ function InfoModal({ open, onClose, config, isConnected }) {
               </span>
             </div>
             <div className="status-row">
+              <span className="status-row-label">Température</span>
+              <span className="status-row-value">
+                <StatusDot state={tempDot} />
+                {tempText}
+              </span>
+            </div>
+            <div className="status-row">
               <span className="status-row-label">Flux drone</span>
               <span className="status-row-value">
                 <StatusDot state={isConnected ? 'green' : 'yellow'} />
@@ -201,6 +219,11 @@ function InfoModal({ open, onClose, config, isConnected }) {
               </span>
             </div>
           </div>
+          {(tempState === 'warm' || tempState === 'hot') && (
+            <p className="info-hint" style={{ color: tempState === 'hot' ? '#ff3b30' : undefined }}>
+              ⚠ Le serveur chauffe. Vérifiez la ventilation de la valise et laissez les ouïes libres.
+            </p>
+          )}
         </div>
 
         <div className="sheet-section">

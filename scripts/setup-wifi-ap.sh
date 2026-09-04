@@ -505,6 +505,15 @@ save_state() {
 
 # Main function
 main() {
+    # Sous systemd, ne jamais bloquer le démarrage (33s dans la chaîne
+    # critique) : relancer en arrière-plan, log dans un fichier.
+    if [ -z "$DRONE_AP_BG" ] && [ ! -t 1 ]; then
+        export DRONE_AP_BG=1
+        setsid bash "$0" </dev/null >>/var/log/drone-wifi-ap-setup.log 2>&1 &
+        log_info "Configuration WiFi relancée en arrière-plan (log: /var/log/drone-wifi-ap-setup.log)"
+        exit 0
+    fi
+
     log_info "=================================="
     log_info "  DRONE OPS WiFi AP Setup"
     log_info "=================================="
