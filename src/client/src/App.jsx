@@ -23,14 +23,20 @@ function App() {
 
   useEffect(() => {
     async function loadInitialData() {
-      try {
-        const configData = await getConfig()
-        setConfig(configData)
-        setView('pin')
-      } catch (error) {
-        console.error('Erreur chargement initial:', error)
-        setView('pin')
+      // Retry while the API boots so the coreLinks loading screen stays up
+      // from the very start instead of a black screen
+      const attempts = 15
+      for (let i = 0; i < attempts; i++) {
+        try {
+          const configData = await getConfig()
+          setConfig(configData)
+          break
+        } catch (error) {
+          if (i === attempts - 1) break
+          await new Promise(r => setTimeout(r, 2000))
+        }
       }
+      setView('pin')
     }
     loadInitialData()
   }, [])
@@ -39,8 +45,8 @@ function App() {
     return (
       <div className="loading-screen">
         <div className="loading-brand">
-          <span className="loading-logo-drone">drone</span>
-          <span className="loading-logo-ops">Ops</span>
+          <span className="loading-logo-drone">core</span>
+          <span className="loading-logo-ops">Links</span>
         </div>
         <Ring className="loading-ring" />
       </div>

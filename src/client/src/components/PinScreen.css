@@ -55,7 +55,7 @@
 .pin-brand-ops {
   font-size: clamp(2.6rem, 6vw, 3.8rem);
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--brand-orange, #e06d00);
   letter-spacing: -0.04em;
 }
 .pin-subtitle {

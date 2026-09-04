@@ -3,8 +3,8 @@
  * Logo: drone-ops-logo.png (fallback to text) + Ring spinner
  */
 
-Window.SetBackgroundTopColor(0.102, 0.102, 0.18);
-Window.SetBackgroundBottomColor(0.102, 0.102, 0.18);
+Window.SetBackgroundTopColor(0.0, 0.0, 0.0);
+Window.SetBackgroundBottomColor(0.0, 0.0, 0.0);
 
 screen_width = Window.GetWidth();
 screen_height = Window.GetHeight();
@@ -12,14 +12,14 @@ center_x = screen_width / 2;
 center_y = screen_height / 2;
 
 // ── Logo ──────────────────────────────────────────────────────
-// Try PNG first (sharp, two-tone: drone white + Ops cyan)
-logo_image = Image("drone-ops-logo.png");
+// Try PNG first (sharp, two-tone: core white + Links orange)
+logo_image = Image("corelinks-logo.png");
 if (!logo_image) {
     // Fallback: plain text (white). Plymouth Image.Text signature:
     // Image.Text(text, red, green, blue, alpha, font, align)
     // Font must include size: "Sans Bold 48"
     logo_font = "Sans Bold 48";
-    logo_image = Image.Text("droneOps", 1, 1, 1, 1, logo_font);
+    logo_image = Image.Text("coreLinks", 1, 1, 1, 1, logo_font);
 }
 
 logo_sprite = Sprite(logo_image);
@@ -29,7 +29,7 @@ logo_sprite.SetOpacity(1);
 
 // ── Spinner ───────────────────────────────────────────────────
 // Prefer ring PNG (rotating arc, matches web Ring component).
-// Fallback to 8-dot pulsing circle if ring PNG not present.
+// Fallback to 8-dot pulsing circle (orange) if ring PNG not present.
 
 spinner_ring_image = Image("spinner-ring.png");
 spinner_size = 64;
@@ -48,7 +48,7 @@ if (spinner_ring_image) {
     spinner_angle = 0;
 }
 
-// Fallback dots (8 cyan dots, opacity pulse)
+// Fallback dots (8 orange dots, opacity pulse)
 num_dots = 8;
 spinner_dots = [];
 if (!use_ring) {
@@ -61,7 +61,7 @@ if (!use_ring) {
         angle = (i / num_dots) * 2 * Math.Pi;
         dot_x = spinner_center_x + Math.Cos(angle) * dot_spinner_size - dot_radius / 2;
         dot_y = spinner_center_y + Math.Sin(angle) * dot_spinner_size - dot_radius / 2;
-        dot = Image.Text("•", 0, 0.831, 1, 1, dot_font);
+        dot = Image.Text("•", 0.878, 0.427, 0, 1, dot_font);
         dot_sprite = Sprite(dot);
         dot_sprite.SetPosition(dot_x, dot_y, 2);
         dot_sprite.SetOpacity(0.2);

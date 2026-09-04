@@ -151,7 +151,7 @@ function InfoModal({ open, onClose, config, isConnected }) {
       ? 'Désactivée'
       : push.active
         ? 'Active'
-        : push.last_error ? 'Erreur' : 'En attente du flux'
+        : push.last_error ? 'Erreur' : 'En attente'
 
   const screenIp = status?.lan?.ip || config?.router_lan_ip || '192.168.10.10'
 
@@ -166,7 +166,7 @@ function InfoModal({ open, onClose, config, isConnected }) {
           <span className="sheet-section-label">État du système</span>
           <div className="status-list">
             <div className="status-row">
-              <span className="status-row-label">WiFi</span>
+              <span className="status-row-label">WiFi - Drone</span>
               <span className="status-row-value">
                 <StatusDot state={wifiState} />
                 {wifiState === 'green' ? 'Actif' : wifiState === 'red' ? 'Inactif' : 'Vérification…'}

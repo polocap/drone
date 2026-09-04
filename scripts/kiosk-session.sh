@@ -23,17 +23,9 @@ export GDK_SCALE=1
 export GDK_DPI_SCALE=1
 export WLR_DRM_NO_ATOMIC=1
 
-# Wait for the drone API (max 120s)
-retries=0
-until curl -sf "${KIOSK_URL}/health" > /dev/null 2>&1; do
-    retries=$((retries + 1))
-    if [ $retries -ge 120 ]; then
-        log "WARNING: API not ready after 120s, starting kiosk anyway"
-        break
-    fi
-    sleep 1
-done
-log "API ready, launching cage + Chromium kiosk at $KIOSK_URL"
+# Launch immediately — the app shows the coreLinks loading screen and
+# retries the API itself, so there is no black screen while services boot
+log "Launching cage + Chromium kiosk at $KIOSK_URL (app retries API on its own)"
 
 exec cage -d -- \
     chromium \

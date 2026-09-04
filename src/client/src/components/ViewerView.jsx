@@ -67,7 +67,7 @@ function ViewerInfoModal({ open, onClose }) {
   const pushLabel = !push ? 'Vérification…'
     : !push.enabled ? 'Désactivée'
     : push.active ? 'Active'
-    : push.last_error ? 'Erreur' : 'En attente du flux'
+    : push.last_error ? 'Erreur' : 'En attente'
   const pushState = !push ? 'yellow'
     : !push.enabled ? 'yellow'
     : push.active ? 'green'

@@ -25,5 +25,61 @@
     "type": "DJI Mavic 3T",
     "unit": "GRIMP",
     "description": "Drone reconnaissance thermique"
+  },
+  {
+    "id": "UAS-FR-257838",
+    "name": "Mavic 2 Advanced",
+    "brand": "DJI",
+    "model": "Mavic 2 Enterprise Advanced",
+    "unit": "Autun",
+    "image": "/assets/drone-uas-fr-140453.png"
+  },
+  {
+    "id": "UAS-FR-303924",
+    "name": "Mavic 2 Advanced",
+    "brand": "DJI",
+    "model": "Mavic 2 Enterprise Advanced",
+    "unit": "Paray le Monial",
+    "image": "/assets/drone-uas-fr-140453.png"
+  },
+  {
+    "id": "UAS-FR-453459",
+    "name": "M30T",
+    "brand": "DJI",
+    "model": "DJI M30T",
+    "unit": "Tournus",
+    "image": "/assets/dji-m30t.webp"
+  },
+  {
+    "id": "UAS-FR-622028",
+    "name": "Matrice 4TD",
+    "brand": "DJI",
+    "model": "DJI Matrice 4TD",
+    "unit": "Louhans",
+    "image": "/assets/dji-matrice-4td.png"
+  },
+  {
+    "id": "UAS-FR-626508",
+    "name": "Matrice 4TD",
+    "brand": "DJI",
+    "model": "DJI Matrice 4TD",
+    "unit": "Le Creusot",
+    "image": "/assets/dji-matrice-4td.png"
+  },
+  {
+    "id": "UAS-FR-626878",
+    "name": "Matrice 4TD",
+    "brand": "DJI",
+    "model": "DJI Matrice 4TD",
+    "unit": "Paray le Monial",
+    "image": "/assets/dji-matrice-4td.png"
+  },
+  {
+    "id": "UAS-FR-626935",
+    "name": "Matrice 4TD",
+    "brand": "DJI",
+    "model": "DJI Matrice 4TD",
+    "unit": "Tournus",
+    "image": "/assets/dji-matrice-4td.png"
   }
 ]

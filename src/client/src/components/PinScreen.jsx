@@ -130,8 +130,8 @@ function PinScreen({ onUnlock }) {
 
       <div className="pin-header">
         <div className="pin-brand">
-          <span className="pin-brand-drone">drone</span>
-          <span className="pin-brand-ops">Ops</span>
+          <span className="pin-brand-drone">core</span>
+          <span className="pin-brand-ops">Links</span>
         </div>
         <p className="pin-subtitle">Entrez le code d'accès</p>
       </div>
