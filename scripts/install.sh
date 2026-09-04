@@ -176,8 +176,13 @@ setup_plymouth_theme() {
             cat > /etc/dracut.conf.d/50-drone-ops.conf <<'DRACUTEOF'
 add_dracutmodules+=" plymouth drm "
 add_drivers+=" i915 "
+install_items+=" /usr/share/plymouth/themes/drone-ops/* "
 hostonly="no"
 DRACUTEOF
+        fi
+        # UseSimpledrm=0 : sinon le rebuild initramfs echoue (dep. dracut simpledrm)
+        if [ -f /usr/share/plymouth/plymouthd.defaults ]; then
+            echo "UseSimpledrm=0" > /usr/share/plymouth/plymouthd.defaults
         fi
 
         # Update GRUB: quiet splash + hide logs + blacklist simpledrm
