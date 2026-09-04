@@ -25,4 +25,4 @@ H=$(awk -F, '{print $2}' /sys/class/graphics/fb0/virtual_size 2>/dev/null)
 setterm -clear all >/dev/tty1 2>/dev/null || true
 
 # peindre en boucle jusqu'à ce que systemd arrête l'unité
-exec ffmpeg -loglevel error -loop 1 -i "$LOGO" -vf "scale=${W}:${H}" -f fbdev /dev/fb0
+exec ffmpeg -loglevel error -loop 1 -i "$LOGO" -vf "scale=${W}:${H},format=bgra" -f fbdev /dev/fb0

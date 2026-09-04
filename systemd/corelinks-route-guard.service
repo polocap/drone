@@ -1,0 +1,13 @@
+[Unit]
+Description=coreLinks default-route guard (keep only the 4G router gateway)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/drone/scripts/corelinks-default-route-guard.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
