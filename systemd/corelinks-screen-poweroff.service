@@ -1,0 +1,14 @@
+[Unit]
+Description=coreLinks shutdown screen (framebuffer logo, replaces plymouth)
+DefaultDependencies=no
+Before=shutdown.target
+Conflicts=final.target
+
+[Service]
+Type=simple
+ExecStart=/opt/drone/scripts/corelinks-screen.sh shutdown
+Restart=no
+TimeoutStopSec=infinity
+
+[Install]
+WantedBy=shutdown.target

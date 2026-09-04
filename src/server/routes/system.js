@@ -67,6 +67,13 @@ async function probeFirst(host, ports) {
   return false
 }
 
+// ICMP ping fallback — some routers filter TCP management ports
+function pingProbe(host, timeout = 1500) {
+  return new Promise((resolve) => {
+    exec(`ping -c1 -W1 ${host}`, { timeout }, (err) => resolve(!err))
+  })
+}
+
 // CPU temperature from the thermal zones (N100: x86_pkg_temp is the
 // package sensor; fallback to the hottest zone available)
 function readCpuTemp() {
@@ -122,8 +129,8 @@ router.get('/status', async (req, res) => {
   // Router (wired gateway) + internet (4G data) reachability
   const route = defaultRoute()
   const gateway = route?.gateway || null
-  const routerUp = gateway ? await probeFirst(gateway, [53, 80]) : false
-  const internetUp = routerUp ? (await probeFirst('1.1.1.1', [53]) || await probeFirst('8.8.8.8', [53])) : false
+  const routerUp = gateway ? (await probeFirst(gateway, [80, 53]) || await pingProbe(gateway)) : false
+  const internetUp = routerUp ? (await probeFirst('1.1.1.1', [53, 443]) || await probeFirst('8.8.8.8', [53, 443]) || await pingProbe('1.1.1.1')) : false
 
   const pushRuntime = getPushStatus()
   const pushSettings = await loadSettings()

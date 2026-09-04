@@ -228,6 +228,20 @@ setup_services() {
     # Reload systemd
     systemctl daemon-reload
 
+    # coreLinks boot/shutdown screens (framebuffer logo — plymouth crashes
+    # on this Ubuntu build, so it is masked)
+    cp "$INSTALL_DIR/scripts/corelinks-screen.sh" /opt/drone/scripts/ 2>/dev/null || true
+    chmod +x /opt/drone/scripts/corelinks-screen.sh 2>/dev/null || true
+    mkdir -p /usr/share/plymouth/themes/drone-ops 2>/dev/null || true
+    cp "$INSTALL_DIR/plymouth/drone-ops/corelinks-screen.png" /usr/share/plymouth/themes/drone-ops/ 2>/dev/null || true
+    cp "$INSTALL_DIR/systemd/corelinks-screen-boot.service" "$INSTALL_DIR/systemd/corelinks-screen-poweroff.service" /etc/systemd/system/ 2>/dev/null || true
+    systemctl enable corelinks-screen-boot.service 2>/dev/null || true
+    systemctl enable corelinks-screen-poweroff.service 2>/dev/null || true
+    for unit in plymouth-start plymouth-read-write plymouth-quit plymouth-quit-timer \
+                plymouth-quit-wait plymouth-reboot plymouth-poweroff plymouth-halt plymouth-kexec; do
+        systemctl mask "$unit" 2>/dev/null || true
+    done
+
     # Enable services
     systemctl enable mediamtx 2>/dev/null || true
     systemctl enable drone-api 2>/dev/null || true

@@ -1,0 +1,12 @@
+[Unit]
+Description=coreLinks boot screen (framebuffer logo, replaces plymouth)
+After=local-fs.target systemd-udevd.service
+Conflicts=graphical.target
+
+[Service]
+Type=simple
+ExecStart=/opt/drone/scripts/corelinks-screen.sh boot
+Restart=no
+
+[Install]
+WantedBy=basic.target

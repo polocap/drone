@@ -242,7 +242,6 @@ function InfoModal({ open, onClose, config, isConnected }) {
               <span className="info-card-v mono">http://{screenIp}:8080/?viewer</span>
             </div>
           </div>
-          <p className="info-hint">Connectez les écrans externes à ce réseau WiFi puis ouvrez l'adresse ci-dessus : heure, flux en direct, état du système et vidéos enregistrées téléchargeables.</p>
         </div>
 
         <button className="sheet-btn sheet-btn--ghost sheet-btn--full" onClick={onClose}>Fermer</button>
