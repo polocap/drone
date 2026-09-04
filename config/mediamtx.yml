@@ -23,6 +23,9 @@ hlsPartDuration: 200ms
 hlsSegmentMaxSize: 50M
 hlsMuxerCloseAfter: 60s
 
+# Recording retention — keep videos 7 days (MediaMTX default is 24h!)
+recordDeleteAfter: 168h
+
 # WebRTC (port 8889)
 webrtc: yes
 webrtcAddress: :8889
@@ -36,10 +39,10 @@ paths:
   drone:
     source: publisher
     record: yes
-    recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S_%path.mp4
+    recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S_%path
     recordFormat: fmp4
   all_others:
     source: publisher
     record: yes
-    recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S_%path.mp4
+    recordPath: /var/lib/drone/videos/%Y-%m-%d/%Y-%m-%d_%H-%M-%S_%path
     recordFormat: fmp4

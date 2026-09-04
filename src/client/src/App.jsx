@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import PinScreen from './components/PinScreen'
 import LiveView from './components/LiveView'
+import ViewerView from './components/ViewerView'
 import Calibrate from './components/Calibrate'
 import { Ring } from './components/loading-ui/ring'
 import { getConfig } from './api'
@@ -8,6 +9,14 @@ import { getConfig } from './api'
 function App() {
   if (typeof window !== 'undefined' && (window.location.pathname === '/calibrate' || window.location.search.includes('calibrate'))) {
     return <Calibrate />
+  }
+  // Écrans externes (WiFi routeur) : vue lecture seule sans PIN
+  if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('viewer')) {
+    return (
+      <div className="app">
+        <ViewerView />
+      </div>
+    )
   }
   const [view, setView] = useState('loading')
   const [config, setConfig] = useState(null)

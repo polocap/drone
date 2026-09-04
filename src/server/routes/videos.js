@@ -13,34 +13,36 @@ router.get('/', async (req, res) => {
   try {
     const dates = await fs.readdir(VIDEOS_DIR)
     const videos = []
-    
+
     for (const dateDir of dates) {
       const datePath = path.join(VIDEOS_DIR, dateDir)
       const stat = await fs.stat(datePath)
-      
+
       if (stat.isDirectory()) {
-        const files = await fs.readdir(datePath)
-        
-        for (const file of files) {
-          if (file.endsWith('.flv') || file.endsWith('.mp4')) {
-            const filePath = path.join(datePath, file)
-            const fileStat = await fs.stat(filePath)
-            
-            videos.push({
-              filename: file,
-              date: dateDir,
-              path: `${dateDir}/${file}`,
-              size: fileStat.size,
-              sizeMB: Math.round(fileStat.size / 1024 / 1024 * 10) / 10,
-              created: fileStat.birthtime
-            })
-          }
+        // recursive: per-drone recordings nest under a session subdir
+        // (recordPath contains %path, e.g. "..._live/UAS-FR-140453.mp4")
+        const entries = await fs.readdir(datePath, { recursive: true })
+
+        for (const rel of entries) {
+          if (!/\.(flv|mp4)$/i.test(rel)) continue
+          const filePath = path.join(datePath, rel)
+          const fileStat = await fs.stat(filePath)
+          if (!fileStat.isFile()) continue
+
+          videos.push({
+            filename: rel,
+            date: dateDir,
+            path: `${dateDir}/${rel}`,
+            size: fileStat.size,
+            sizeMB: Math.round(fileStat.size / 1024 / 1024 * 10) / 10,
+            created: fileStat.birthtime
+          })
         }
       }
     }
-    
+
     videos.sort((a, b) => b.created - a.created)
-    
+
     res.json(videos)
   } catch (error) {
     if (error.code === 'ENOENT') {
@@ -52,13 +54,16 @@ router.get('/', async (req, res) => {
   }
 })
 
-router.get('/download/:date/:filename', async (req, res) => {
+router.get('/download/*', async (req, res) => {
   try {
-    const { date, filename } = req.params
-    const filePath = path.join(VIDEOS_DIR, date, filename)
-    
+    const rel = req.params[0] || ''
+    if (rel.includes('..')) return res.status(400).json({ error: 'Chemin invalide' })
+
+    const base = path.resolve(VIDEOS_DIR)
+    const filePath = path.resolve(base, rel)
+    if (!filePath.startsWith(base + path.sep)) return res.status(400).json({ error: 'Chemin invalide' })
+
     await fs.access(filePath)
-    
     res.download(filePath)
   } catch (error) {
     if (error.code === 'ENOENT') {

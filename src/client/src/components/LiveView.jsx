@@ -92,7 +92,7 @@ function SettingsModal({ open, onClose, config }) {
           {externalEnabled && (
             <div className="sheet-field">
               <span className="sheet-field-label">Lien RTMP distant (fixe)</span>
-              <div className="sheet-input" style={{ opacity: 0.75, userSelect: 'all' }}>{rtmpUrl}</div>
+              <p className="info-hint mono" style={{ margin: 0, wordBreak: 'break-all' }}>{rtmpUrl}</p>
             </div>
           )}
         </div>
@@ -127,6 +127,7 @@ function InfoModal({ open, onClose, config, isConnected }) {
   }, [open])
 
   const wifiState = status ? (status.wifi ? 'green' : 'red') : 'yellow'
+  const screenWifiState = status ? (status.router ? 'green' : 'red') : 'yellow'
   const routerState = status ? (status.internet ? 'green' : status.router ? 'yellow' : 'red') : 'yellow'
   const routerLabel = status
     ? status.internet
@@ -172,6 +173,13 @@ function InfoModal({ open, onClose, config, isConnected }) {
               </span>
             </div>
             <div className="status-row">
+              <span className="status-row-label">WiFi - Screen</span>
+              <span className="status-row-value">
+                <StatusDot state={screenWifiState} />
+                {screenWifiState === 'green' ? 'Actif' : screenWifiState === 'red' ? 'Inactif' : 'Vérification…'}
+              </span>
+            </div>
+            <div className="status-row">
               <span className="status-row-label">4G</span>
               <span className="status-row-value">
                 <StatusDot state={routerState} />
@@ -196,21 +204,6 @@ function InfoModal({ open, onClose, config, isConnected }) {
         </div>
 
         <div className="sheet-section">
-          <span className="sheet-section-label">WiFi - Drone</span>
-          <div className="info-card">
-            <div className="info-card-row">
-              <span className="info-card-k">Réseau</span>
-              <span className="info-card-v mono">{config?.wifi_ssid || 'corelink-001-drone'}</span>
-            </div>
-            <div className="info-card-row">
-              <span className="info-card-k">Mot de passe</span>
-              <span className="info-card-v mono">{config?.wifi_password || '9fK7qP2xL8vT4wR!3kD8mN5'}</span>
-            </div>
-          </div>
-          <p className="info-hint">Réservée à la télécommande DJI pour publier le flux. Le détail de connexion est aussi accessible via le bouton Drone.</p>
-        </div>
-
-        <div className="sheet-section">
           <span className="sheet-section-label">WiFi - Screen</span>
           <div className="info-card">
             <div className="info-card-row">
@@ -222,11 +215,11 @@ function InfoModal({ open, onClose, config, isConnected }) {
               <span className="info-card-v mono">{config?.router_wifi_password || '4vR9!mQ2xK8sT7wP5nZ3'}</span>
             </div>
             <div className="info-card-row">
-              <span className="info-card-k">Accès navigateur</span>
-              <span className="info-card-v mono">http://{screenIp}:8080</span>
+              <span className="info-card-k">Accès écrans</span>
+              <span className="info-card-v mono">http://{screenIp}:8080/?viewer</span>
             </div>
           </div>
-          <p className="info-hint">Affichage sur écrans externes : connectez-les à ce réseau WiFi puis ouvrez l'adresse ci-dessus dans un navigateur pour voir le flux et récupérer les vidéos.</p>
+          <p className="info-hint">Connectez les écrans externes à ce réseau WiFi puis ouvrez l'adresse ci-dessus : heure, flux en direct, état du système et vidéos enregistrées téléchargeables.</p>
         </div>
 
         <button className="sheet-btn sheet-btn--ghost sheet-btn--full" onClick={onClose}>Fermer</button>
